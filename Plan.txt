@@ -1,0 +1,81 @@
+This project is called MyGiftReg. It is a web based gift registry for a family to use. Each family member can create and view events (e.g. a birthday or holiday). They can create their own gift lists, and view the lists of others. Family members can reserve items on others' lists, and the owner of the list can't see whether an item on their list is reserved.
+
+The hosting technology is Azure, using an app service to host the web application and Entra to manage identify access. The project is split into a frontend and a backend. The frontend does user authorization and controls what actions they are allowed to do. The backend manages reading and writing the persistent state, such as updating gift lists.
+
+Concepts:
+
+The website manages a list of Events.
+
+An Event has these elements:
+* name
+* description
+* Collection of Gift Lists
+
+Each Gift List in an Event is owned by a user. A user can have more than one Gift List in an Event. A Gift List has these elements:
+* name
+* owner
+* list of Gift Items
+
+A Gift Item has the following elements:
+* name
+* description
+* URL (optional)
+* user who reserved this item, if any
+
+The backend:
+
+The backend is a C# library that supports the following operations:
+* Create Event
+* Read Event
+* Update Event
+* Delete Event
+* Create Gift List
+* Read Gift List
+* Delete Gift List
+* Create Gift Item
+* Read Gift Item
+* Update Gift Item
+* Delete Gift Item
+
+This library is written to be concurrent and thread-safe by design, such that reads and modifications ot the backend can happen in parallel from different processes and the result is consistent. The backend storage is Azure Storage Tables. Use optimistic concurrency (ETag locking) as the primary mechanism for supporting concurrency.
+
+The frontend:
+
+The frontend is a web service that integrates with Entra to authenticate users. Family members need to have their accounts granted a role in an Entra application to get access to the website. Once they have access, they see the main interface.
+
+The main view of the website displays a list of existing Events. There is a button to create a new Event, and existing Events can be clicked on to bring up a detailed view of the Event.
+
+The event view displays the name and description of the Event. Then it shows the Gift Lists for the Event. The Gift Lists owned by the current user are shown first, followed by the gift lists owned by other users. In this view, each Gift List's name and owner are displayed. There is a button to create a new Gift List, and a button to delete the Event. Clicking on a Gift List owned by the current user will bring up the gift list edit view. Clicking on a gift list owned by another user will bring up the Gift List Reserve view.
+
+The gift list edit view displays the name of the gift list and a list of Gift Items. There is a button to add a new item, which opens the gift item edit view. There is a button to delete the Gift List. Each item in the list contains the name of the item. Clicking on the item opens the gift item edit view.
+
+The gift item edit view displays the name, description, and URL of the item in edit boxes. Changes to these values are reflected once the view is dismissed by clicking OK. There is also a Delete button, and a Cancel button. When adding a new item, this view commit the new item when OK is clicked.
+
+The Gift List Reserve view displays the name and owner of the list, and a list of gift items. The list contains the name of the item, plus whether the item is reserved and who reserved it. Clicking on an item bring up the gift item reserve view.
+
+The gift item reserve view displays the name, description, URL, and who has the item reserved. There is a Reserve button that is disabled if the item is already reserved. There us an Unreserve button that is disabled if the item is not reserved byt he current user.
+
+The frontend enforces the valid actions a user may take. A user can take these acitons:
+* View events
+* Create events
+* Delete events
+* View Gift Lists
+* Create a Gift List owned by the current user
+* Delete a Gift List owned by the current user
+* View the items in a list owned by the current user, except the reservation status of the item
+* Create an item in a Gift List owned by the current user
+* Delete an item in a Gift List owned by the current user
+* View the items in a list owned by a different user, including the reservation status
+* Reserve an item in a list owned by a different user, if that item is not already reserved
+* Unreserve an iten in a list owned by a different user, if that item is reserved by the current user
+
+STEPS:
+
+The following steps must be followed during the development of this project.
+1. Create the solution and the backend project.
+2. Develop the API interface of the backend project without the API implementation.
+3. Implement the backend APIs and backend unit tests.
+4. Create the frontend project.
+5. Implement the REST APIs for the frontend and frontent unit tests.
+6. Implement the web interface for the frontend and web interface tests.
+7. Create deployment artifacts for deploying the project to Azure.

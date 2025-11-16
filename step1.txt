@@ -1,0 +1,98 @@
+STEP 1 ANALYSIS - Areas Requiring Clarification Before Implementation
+
+Based on the review of Plan.txt, the following areas need clarification before we can begin implementation:
+
+## 1. Technology Stack Specifics
+- **.NET Version**: What version of .NET should we use? (.NET 8, .NET 7, etc.)
+-- use .NET 8
+- **C# Version**: Which C# language version?
+-- no preference, use a modern version
+- **Azure Storage SDK**: Which version of Azure.Data.Tables or Microsoft.Azure.Cosmos.Table?
+-- use the latest recommended version
+- **Frontend Technology**: Is the frontend ASP.NET Core MVC, Razor Pages, Blazor Server, or Blazor WebAssembly?
+-- help me decide
+- **Testing Framework**: xUnit, NUnit, or MSTest for unit tests?
+-- xunit
+
+## 2. Azure Configuration Details
+- **Azure Subscription**: Do we have access to an existing Azure subscription or need to set one up?
+-- we will use sub ID 937f0381-73ed-4db5-8f7b-05fd08dab165
+- **Storage Account**: Existing storage account or create new? What region?
+-- will need to create a new one in eastus2
+- **Entra Application**: Do we have an existing Entra application or need to create one?
+-- will need to create one
+- **Resource Group**: Where should resources be deployed?
+-- call the resource group "mygiftreg"
+
+## 3. API Design Specifications
+- **REST Endpoints**: What should the specific HTTP endpoints be for each operation?
+-- you should design a RESTful approach, where path /events/MyEvent accesses an event called MyEvent and path/events/MyEvent/giftlists/MyUsername/[guid] accesses a Gift List with the specified ID.
+- **Request/Response Models**: What DTOs should be used for API communication?
+-- Use JSON payloads to pass information back and forth with the client
+- **Validation**: What validation rules should be implemented?
+-- Validate all inputs and fail gracefully if something unexpected appears.
+- **Error Handling**: What error responses should the APIs return?
+-- A response of 400 Bad Request should be used for anything malformed. Use 401 for access errors, 404 for path resources that don't exist, and 409 for operations that fail due to the backend state such as trying to reserve an item that is already reserved.
+
+## 4. Database Schema Design
+- **Table Names**: What should the Azure Storage Table names be?
+-- Let's use "EventTable", "GiftListTable", and "GiftItemTable".
+- **Partition/Row Keys**: What strategy should be used for partitioning data?
+-- EventTable: Partition Key is empty, RowKey is the name of the Event. GiftListTable: PartitionKey is the name of the Event. RowKey is userid_guid, where userid is the username of the owner of the list and guid is a unique identifier. GiftItemTable: PartitionKey is the GUID of the list, row key is a GUID for the item.
+- **Entity Relationships**: How should the entities be modeled in Azure Storage Tables?
+-- See above. PartitionKey identifies the parent and RowKey identifies the entity. This formalizes the hierarchy and allows efficient lookup.
+- **Indexes**: What queries need to be optimized?
+-- Listing all events, listing all lists in an event, listing all items in a list.
+
+## 5. Authentication & Authorization
+- **User Roles**: What specific roles should be defined in Entra?
+-- Let's have a single role, "user".
+- **Authorization Policies**: How should authorization be implemented (policy-based, role-based)?
+-- Entra roles will be used to determine who has access to the site at all. The site will need to perform access checks to validate that the current user is allowed to take an action based on the owner stored in GiftListTable.
+- **User Management**: How will family members be added to the system?
+-- An Entra owner will use the Azure Portal to set up this access.
+
+## 6. Frontend UI/UX Specifications
+- **Design System**: Should we use a CSS framework (Bootstrap, Tailwind, etc.)?
+-- No preference.
+- **Responsive Design**: What devices/browsers should be supported?
+-- Don't target any particular browser. Make the site follow web standards and be generally accessible.
+- **JavaScript/TypeScript**: Will the frontend use client-side scripting?
+-- Yes, it makes sense to use client-side scripting to call the REST APIs and parse the returned JSON.
+
+## 7. Development Environment Setup
+- **IDE**: Visual Studio or VS Code?
+-- VS Code
+- **Local Development**: Azure Storage Emulator or use cloud storage during development?
+-- Cloud storage is fine
+- **Environment Variables**: What configuration values are needed locally vs production?
+-- Let's make local as close to production as possible.
+
+## 8. Project Structure
+- **Solution Organization**: Should backend and frontend be in separate projects or same solution?
+-- separate projects within the same solution; the backend is a C# library that interfaces with azure storage and the frontend calls the backend library
+- **Project Naming Convention**: What naming pattern to use?
+-- no preference
+- **Folder Structure**: Standard ASP.NET Core structure or custom?
+-- standard
+
+## 9. Deployment & DevOps
+- **CI/CD Pipeline**: What should the deployment process look like?
+-- Produce an ARM template that I can deploy using Powershell.
+- **Environment Configuration**: How will different environments (dev, staging, prod) be managed?
+-- Use different resource groups but use the same entra app.
+- **Monitoring**: What logging and monitoring should be implemented?
+-- Return detailed errors and emit Javascript logs
+
+## 10. Testing Strategy
+- **Test Coverage**: What percentage of code should be covered by tests?
+-- no specific percentage
+- **Integration Tests**: Should we test against real Azure Storage or use mocking?
+-- use real azure storage
+- **UI Testing**: What approach for testing the web interface?
+-- use Playwright for UI testing
+
+## Status
+- [x] Analyzed Plan.txt and identified clarification points
+- [ ] Awaiting responses to clarification questions
+- [ ] Will proceed with Step 2 once clarifications are received
