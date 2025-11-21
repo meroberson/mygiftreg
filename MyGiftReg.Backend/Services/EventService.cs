@@ -37,7 +37,7 @@ namespace MyGiftReg.Backend.Services
             {
                 Name = request.Name,
                 Description = request.Description,
-                EventDate = request.EventDate,
+                EventDate = request.EventDate?.ToUniversalTime(),
                 CreatedBy = userId,
                 CreatedDate = DateTime.UtcNow
             };

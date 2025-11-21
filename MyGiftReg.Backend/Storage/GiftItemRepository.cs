@@ -8,7 +8,7 @@ namespace MyGiftReg.Backend.Storage
 {
     public class GiftItemRepository : BaseRepository<GiftItem>, IGiftItemRepository
     {
-        public GiftItemRepository(TableClient tableClient) : base(tableClient)
+        public GiftItemRepository(TableServiceClient tableServiceClient) : base(tableServiceClient.GetTableClient("GiftItems"))
         {
         }
 

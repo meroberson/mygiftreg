@@ -8,7 +8,7 @@ namespace MyGiftReg.Backend.Storage
 {
     public class EventRepository : BaseRepository<Event>, IEventRepository
     {
-        public EventRepository(TableClient tableClient) : base(tableClient)
+        public EventRepository(TableServiceClient tableServiceClient) : base(tableServiceClient.GetTableClient("Events"))
         {
         }
 
@@ -29,7 +29,7 @@ namespace MyGiftReg.Backend.Storage
                 throw new ValidationException($"Event with name '{eventEntity.Name}' already exists.");
             }
 
-            await CreateAsync(eventEntity);
+            await base.CreateAsync(eventEntity);
             return eventEntity;
         }
 
@@ -67,7 +67,7 @@ namespace MyGiftReg.Backend.Storage
 
         public async Task<IList<Event>> GetAllAsync()
         {
-            var allEvents = await GetAllAsync();
+            var allEvents = await base.GetAllAsync();
             return allEvents.Where(e => e.PartitionKey == "").ToList();
         }
 

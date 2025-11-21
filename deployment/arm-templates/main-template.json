@@ -1,0 +1,175 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "mygiftreg",
+      "metadata": {
+        "description": "Name of the resource group"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus2",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat('mygiftreg', uniqueString(subscription().subscriptionId))]",
+      "metadata": {
+        "description": "Name of the storage account"
+      }
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "defaultValue": "mygiftreg-plan",
+      "metadata": {
+        "description": "Name of the App Service Plan"
+      }
+    },
+    "webAppName": {
+      "type": "string",
+      "defaultValue": "[concat('mygiftreg-webapp', uniqueString(subscription().subscriptionId))]",
+      "metadata": {
+        "description": "Name of the Web App"
+      }
+    },
+    "entraAppName": {
+      "type": "string",
+      "defaultValue": "MyGiftRegistry",
+      "metadata": {
+        "description": "Name of the Entra ID Application"
+      }
+    }
+  },
+  "variables": {
+    "storageAccountType": "Standard_LRS",
+    "appServicePlanSku": "P1v3",
+    "webAppRuntimeStack": "DOTNETCORE|8.0"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('storageAccountType')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        }
+      },
+      "resources": [
+        {
+          "type": "providers/roleAssignments",
+          "apiVersion": "2022-04-01",
+          "dependsOn": [
+            "[parameters('storageAccountName')]"
+          ],
+          "condition": "[contains(parameters('storageAccountName'), 'mygiftreg')]",
+          "properties": {
+            "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+            "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).identity.principalId]",
+            "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('appServicePlanSku')]",
+        "tier": "PremiumV3",
+        "size": "P1v3",
+        "family": "Pv3",
+        "capacity": 1
+      },
+      "properties": {
+        "workerSize": "1",
+        "workerSizeId": "0",
+        "numberOfWorkers": 1,
+        "maximumElasticWorkerCount": 1
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('webAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureStorage:ConnectionString",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))).keys[0].value]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))).keys[0].value]"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "AzureStorageConnection",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))).keys[0].value]",
+              "type": "Custom"
+            }
+          ],
+          "httpLoggingEnabled": true,
+          "detailedErrorLoggingEnabled": true,
+          "scmType": "None"
+        },
+        "httpsOnly": true
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[parameters('webAppName')]"
+    },
+    "webAppUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).defaultHostName]"
+    },
+    "storageAccountKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))).keys[0].value]",
+      "metadata": {
+        "description": "Primary access key for the storage account"
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+STEP 8 - STEP 4 START: IMPLEMENT REST APIs FOR FRONTEND
+
+## Current Status
+- [x] Step 1: Solution and backend project created
+- [x] Step 2: API interfaces developed without implementation
+- [x] Step 3: Backend API implementation and unit tests COMPLETE
+- [x] Step 4: Frontend project exists with basic ASP.NET Core MVC structure
+- [ ] Step 4: Implement REST APIs for the frontend (IN PROGRESS)
+- [ ] Step 4: Frontend unit tests
+
+## Step 4 Implementation Tasks
+
+### REST API Controllers
+- [ ] Create EventsController with CRUD operations
+- [ ] Create GiftListsController with CRUD operations  
+- [ ] Create GiftItemsController with CRUD operations
+- [ ] Implement proper HTTP status codes (200, 201, 400, 401, 404, 409)
+- [ ] Add route versioning and documentation
+
+### Dependency Injection Setup
+- [ ] Configure backend services in Program.cs
+- [ ] Set up Azure Table Storage configuration
+- [ ] Register EventService, GiftListService, GiftItemService
+- [ ] Configure Azure Data Tables client
+
+### Authentication & Authorization
+- [ ] Integrate Entra ID authentication
+- [ ] Add authorization policies for user roles
+- [ ] Implement user ownership verification
+- [ ] Add anti-CSRF protection
+
+### API Response Models
+- [ ] Create DTOs for API responses
+- [ ] Handle error responses with proper status codes
+- [ ] Add API validation error handling
+- [ ] Implement consistent JSON response format
+
+### Frontend Unit Tests
+- [ ] Create controller unit tests with mocking
+- [ ] Test authentication and authorization
+- [ ] Test error handling scenarios
+- [ ] Test API response models
+
+## Progress Summary
+✅ **Completed:** Backend implementation with all services and repositories
+✅ **Completed:** Frontend project structure exists
+⏳ **In Progress:** REST API implementation for ASP.NET Core MVC
+⏳ **Next:** Frontend unit tests and integration testing
+
+## Next Actions
+1. Implement EventsController with full CRUD operations
+2. Implement GiftListsController with filtering and ownership logic
+3. Implement GiftItemsController with reservation system
+4. Configure dependency injection for backend services
+5. Add Entra ID authentication and authorization
+6. Create comprehensive frontend unit tests
