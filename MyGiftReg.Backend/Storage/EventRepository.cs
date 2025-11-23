@@ -29,7 +29,7 @@ namespace MyGiftReg.Backend.Storage
                 throw new ValidationException($"Event with name '{eventEntity.Name}' already exists.");
             }
 
-            await base.CreateAsync(eventEntity);
+            eventEntity = await base.CreateAsync(eventEntity);
             return eventEntity;
         }
 

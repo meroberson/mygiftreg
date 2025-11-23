@@ -2,6 +2,7 @@ using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Backend.Exceptions;
+using MyGiftReg.Backend.Utilities;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyGiftReg.Backend.Services
@@ -17,12 +18,20 @@ namespace MyGiftReg.Backend.Services
             _giftListRepository = giftListRepository;
         }
 
-        public async Task<GiftItem?> CreateGiftItemAsync(CreateGiftItemRequest request, string userId)
+        public async Task<GiftItem?> CreateGiftItemAsync(string eventName, CreateGiftItemRequest request, string userId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
             // Validate the request
             var validationResults = new List<ValidationResult>();
@@ -35,10 +44,10 @@ namespace MyGiftReg.Backend.Services
             }
 
             // Verify that the user owns the gift list
-            var giftList = await _giftListRepository.GetAsync("", request.GiftListId);
+            var giftList = await _giftListRepository.GetAsync(eventName, request.GiftListId);
             if (giftList == null)
             {
-                throw new NotFoundException($"Gift list with ID '{request.GiftListId}' not found.");
+                throw new NotFoundException($"Gift list with ID '{request.GiftListId}' not found in event '{eventName}'.");
             }
 
             if (giftList.Owner != userId)
@@ -74,8 +83,13 @@ namespace MyGiftReg.Backend.Services
             }
         }
 
-        public async Task<GiftItem?> GetGiftItemAsync(string giftListId, string itemId)
+        public async Task<GiftItem?> GetGiftItemAsync(string eventName, string giftListId, string itemId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -86,11 +100,19 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Item ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             return await _giftItemRepository.GetAsync(giftListId, itemId);
         }
 
-        public async Task<GiftItem?> UpdateGiftItemAsync(string giftListId, string itemId, CreateGiftItemRequest request, string userId)
+        public async Task<GiftItem?> UpdateGiftItemAsync(string eventName, string giftListId, string itemId, CreateGiftItemRequest request, string userId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -111,6 +133,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             // Validate the request
             var validationResults = new List<ValidationResult>();
             var validationContext = new ValidationContext(request);
@@ -129,7 +154,7 @@ namespace MyGiftReg.Backend.Services
             }
 
             // Verify that the user owns the gift list containing this item
-            var giftList = await _giftListRepository.GetAsync("", giftListId);
+            var giftList = await _giftListRepository.GetAsync(eventName, giftListId);
             if (giftList == null || giftList.Owner != userId)
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("You can only update items in gift lists that you own.");
@@ -150,8 +175,13 @@ namespace MyGiftReg.Backend.Services
             return await _giftItemRepository.UpdateAsync(giftListId, itemId, giftItemEntity);
         }
 
-        public async Task<bool> DeleteGiftItemAsync(string giftListId, string itemId, string userId)
+        public async Task<bool> DeleteGiftItemAsync(string eventName, string giftListId, string itemId, string userId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -167,8 +197,11 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             // Verify that the user owns the gift list containing this item
-            var giftList = await _giftListRepository.GetAsync("", giftListId);
+            var giftList = await _giftListRepository.GetAsync(eventName, giftListId);
             if (giftList == null)
             {
                 return false; // Gift list not found
@@ -182,8 +215,13 @@ namespace MyGiftReg.Backend.Services
             return await _giftItemRepository.DeleteAsync(giftListId, itemId);
         }
 
-        public async Task<IList<GiftItem>> GetGiftItemsByListAsync(string giftListId, string viewerUserId)
+        public async Task<IList<GiftItem>> GetGiftItemsByListAsync(string eventName, string giftListId, string viewerUserId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -194,13 +232,16 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Viewer user ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             var allItems = await _giftItemRepository.GetByGiftListAsync(giftListId);
 
             // Get the gift list to determine ownership
-            var giftList = await _giftListRepository.GetAsync("", giftListId);
+            var giftList = await _giftListRepository.GetAsync(eventName, giftListId);
             if (giftList == null)
             {
-                throw new NotFoundException($"Gift list with ID '{giftListId}' not found.");
+                throw new NotFoundException($"Gift list with ID '{giftListId}' not found in event '{eventName}'.");
             }
 
             // If the viewer is the owner, hide reservation status
@@ -215,8 +256,13 @@ namespace MyGiftReg.Backend.Services
             return allItems;
         }
 
-        public async Task<GiftItem?> ReserveGiftItemAsync(string giftListId, string itemId, string userId)
+        public async Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -232,11 +278,14 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             // Verify that the gift list exists and is not owned by the current user
-            var giftList = await _giftListRepository.GetAsync("", giftListId);
+            var giftList = await _giftListRepository.GetAsync(eventName, giftListId);
             if (giftList == null)
             {
-                throw new NotFoundException($"Gift list with ID '{giftListId}' not found.");
+                throw new NotFoundException($"Gift list with ID '{giftListId}' not found in event '{eventName}'.");
             }
 
             if (giftList.Owner == userId)
@@ -272,8 +321,13 @@ namespace MyGiftReg.Backend.Services
             }
         }
 
-        public async Task<bool> UnreserveGiftItemAsync(string giftListId, string itemId, string userId)
+        public async Task<bool> UnreserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId)
         {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
             if (string.IsNullOrWhiteSpace(giftListId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
@@ -288,6 +342,9 @@ namespace MyGiftReg.Backend.Services
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
             // Get the existing gift item
             var existingGiftItem = await _giftItemRepository.GetAsync(giftListId, itemId);

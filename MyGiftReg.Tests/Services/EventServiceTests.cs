@@ -97,6 +97,127 @@ namespace MyGiftReg.Tests.Services
             Assert.Contains("User ID cannot be null or empty", exception.Message);
         }
 
+        // New Azure Storage validation tests
+        [Theory]
+        [InlineData("Valid Event Name")]
+        [InlineData("Event123")]
+        [InlineData("Event-With-Hyphens")]
+        [InlineData("Event_With_Underscores")]
+        [InlineData("Event With Spaces")]
+        [InlineData("Event1234567890123456789012345678901234567890123456789012345678901234567890")] // 100 chars
+        public async Task CreateEventAsync_ValidAzureStorageName_Succeeds(string validEventName)
+        {
+            // Arrange
+            var request = new CreateEventRequest
+            {
+                Name = validEventName,
+                Description = "Test Description"
+            };
+            var userId = "testuser";
+
+            var expectedEvent = new Event
+            {
+                Name = validEventName,
+                Description = "Test Description",
+                CreatedBy = userId,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _mockEventRepository.Setup(repo => repo.GetAsync(request.Name))
+                .ReturnsAsync((Event?)null);
+            _mockEventRepository.Setup(repo => repo.CreateAsync(It.IsAny<Event>()))
+                .ReturnsAsync(expectedEvent);
+
+            // Act
+            var result = await _eventService.CreateEventAsync(request, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(validEventName, result.Name);
+        }
+
+        [Theory]
+        [InlineData("Event/With/Slashes")]
+        [InlineData("Event\\With\\Backslashes")]
+        [InlineData("Event#With#Hash")]
+        [InlineData("Event?With?Question")]
+        public async Task CreateEventAsync_EventNameWithForbiddenCharacter_ThrowsValidationException(string invalidEventName)
+        {
+            // Arrange
+            var request = new CreateEventRequest
+            {
+                Name = invalidEventName,
+                Description = "Test Description"
+            };
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.CreateEventAsync(request, userId));
+            
+            Assert.Contains("cannot contain the character", exception.Message);
+            Assert.Contains("not allowed in Azure Table Storage PartitionKey and RowKey", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateEventAsync_EventNameTooLongForDataAnnotations_ThrowsValidationException()
+        {
+            // Arrange
+            var longEventName = new string('A', 101); // 101 characters (exceeds 100 char DataAnnotations limit)
+            var request = new CreateEventRequest
+            {
+                Name = longEventName,
+                Description = "Test Description"
+            };
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.CreateEventAsync(request, userId));
+            
+            Assert.Contains("Event name cannot exceed 100 characters", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateEventAsync_EventNameWithControlCharacter_ThrowsValidationException()
+        {
+            // Arrange
+            var eventNameWithControlChar = "Event\x01With\x1FControl"; // Contains U+0001 and U+001F
+            var request = new CreateEventRequest
+            {
+                Name = eventNameWithControlChar,
+                Description = "Test Description"
+            };
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.CreateEventAsync(request, userId));
+            
+            Assert.Contains("cannot contain control character", exception.Message);
+            Assert.Contains("not allowed in Azure Table Storage PartitionKey and RowKey", exception.Message);
+        }
+
+        [Theory]
+        [InlineData(" EventWithLeadingSpace")]
+        [InlineData("EventWithTrailingSpace ")]
+        public async Task CreateEventAsync_EventNameWithLeadingOrTrailingSpace_ThrowsValidationException(string invalidEventName)
+        {
+            // Arrange
+            var request = new CreateEventRequest
+            {
+                Name = invalidEventName,
+                Description = "Test Description"
+            };
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.CreateEventAsync(request, userId));
+            
+            Assert.Contains("cannot start or end with whitespace characters", exception.Message);
+        }
+
         [Fact]
         public async Task GetEventAsync_ValidEventName_ReturnsEvent()
         {
@@ -134,6 +255,19 @@ namespace MyGiftReg.Tests.Services
             Assert.Contains("Event name cannot be null or empty", exception.Message);
         }
 
+        [Theory]
+        [InlineData("Event/With/Slashes")]
+        [InlineData("Event\\With\\Backslashes")]
+        public async Task GetEventAsync_EventNameWithForbiddenCharacter_ThrowsValidationException(string invalidEventName)
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.GetEventAsync(invalidEventName));
+            
+            Assert.Contains("cannot contain the character", exception.Message);
+            Assert.Contains("not allowed in Azure Table Storage PartitionKey and RowKey", exception.Message);
+        }
+
         [Fact]
         public async Task DeleteEventAsync_ExistingEvent_ReturnsTrue()
         {
@@ -151,6 +285,84 @@ namespace MyGiftReg.Tests.Services
             Assert.True(result);
             
             _mockEventRepository.Verify(repo => repo.DeleteAsync(eventName), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteEventAsync_EventNameWithForbiddenCharacter_ThrowsValidationException()
+        {
+            // Arrange
+            var eventName = "Event#With#Hash";
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.DeleteEventAsync(eventName, userId));
+            
+            Assert.Contains("cannot contain the character '#'", exception.Message);
+        }
+
+        [Fact]
+        public async Task UpdateEventAsync_ValidRequest_UpdatesEvent()
+        {
+            // Arrange
+            var eventName = "Original Event";
+            var request = new CreateEventRequest
+            {
+                Name = "Updated Event",
+                Description = "Updated Description"
+            };
+            var userId = "testuser";
+            
+            var existingEvent = new Event 
+            { 
+                Name = eventName,
+                Description = "Original Description",
+                CreatedBy = userId,
+                CreatedDate = DateTime.UtcNow
+            };
+            
+            var updatedEvent = new Event
+            {
+                Name = request.Name,
+                Description = request.Description,
+                CreatedBy = userId,
+                CreatedDate = existingEvent.CreatedDate
+            };
+
+            _mockEventRepository.Setup(repo => repo.GetAsync(eventName))
+                .ReturnsAsync(existingEvent);
+            _mockEventRepository.Setup(repo => repo.UpdateAsync(eventName, It.IsAny<Event>()))
+                .ReturnsAsync(updatedEvent);
+
+            // Act
+            var result = await _eventService.UpdateEventAsync(eventName, request, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(request.Name, result.Name);
+            Assert.Equal(request.Description, result.Description);
+            
+            _mockEventRepository.Verify(repo => repo.GetAsync(eventName), Times.Once);
+            _mockEventRepository.Verify(repo => repo.UpdateAsync(eventName, It.IsAny<Event>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateEventAsync_NewEventNameWithForbiddenCharacter_ThrowsValidationException()
+        {
+            // Arrange
+            var eventName = "Original Event";
+            var request = new CreateEventRequest
+            {
+                Name = "Event/With/Slashes",
+                Description = "Updated Description"
+            };
+            var userId = "testuser";
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ValidationException>(
+                () => _eventService.UpdateEventAsync(eventName, request, userId));
+            
+            Assert.Contains("cannot contain the character", exception.Message);
         }
 
         [Fact]

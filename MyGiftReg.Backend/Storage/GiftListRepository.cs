@@ -14,21 +14,21 @@ namespace MyGiftReg.Backend.Storage
 
         public async Task<GiftList?> GetAsync(string eventName, string giftListId)
         {
-            return await GetAsync(eventName, giftListId);
+            return await base.GetAsync(eventName, giftListId);
         }
 
         public async Task<GiftList> CreateAsync(GiftList giftListEntity)
         {
             giftListEntity.PartitionKey = giftListEntity.EventName;
-            giftListEntity.RowKey = $"{giftListEntity.Owner}_{giftListEntity.Id}";
+            giftListEntity.RowKey = $"{giftListEntity.Id}";
             
             // Check if gift list already exists
             if (await ExistsAsync(giftListEntity.EventName, giftListEntity.RowKey))
             {
-                throw new ValidationException($"Gift list with owner '{giftListEntity.Owner}' already exists in event '{giftListEntity.EventName}'.");
+                throw new ValidationException($"Gift list with ID '{giftListEntity.Id}' already exists in event '{giftListEntity.EventName}'.");
             }
 
-            await CreateAsync(giftListEntity);
+            await base.CreateAsync(giftListEntity);
             return giftListEntity;
         }
 
@@ -48,7 +48,7 @@ namespace MyGiftReg.Backend.Storage
             giftListEntity.ETag = existingGiftList.ETag;
             giftListEntity.Timestamp = existingGiftList.Timestamp;
             
-            return await UpdateAsync(giftListEntity);
+            return await base.UpdateAsync(giftListEntity);
         }
 
         public async Task<bool> DeleteAsync(string eventName, string giftListId)
@@ -60,7 +60,7 @@ namespace MyGiftReg.Backend.Storage
                 return false;
             }
 
-            await DeleteAsync(eventName, giftListId);
+            await base.DeleteAsync(eventName, giftListId);
             return true;
         }
 

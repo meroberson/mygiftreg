@@ -28,13 +28,18 @@ namespace MyGiftReg.Backend.Storage
 
         public async Task<T> CreateAsync(T entity)
         {
-            await _tableClient.AddEntityAsync(entity);
+            Response response = await _tableClient.AddEntityAsync(entity);
+            entity.ETag = response.Headers.ETag ?? default(ETag);
+            entity.Timestamp = response.Headers.Date;
             return entity;
         }
 
         public async Task<T> UpdateAsync(T entity)
         {
-            await _tableClient.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace);
+            Response response = await _tableClient.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace);
+            entity.ETag = response.Headers.ETag ?? default(ETag);
+            entity.Timestamp = response.Headers.Date;
+            
             return entity;
         }
 

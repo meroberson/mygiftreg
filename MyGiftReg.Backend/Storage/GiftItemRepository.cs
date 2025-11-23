@@ -14,7 +14,7 @@ namespace MyGiftReg.Backend.Storage
 
         public async Task<GiftItem?> GetAsync(string giftListId, string itemId)
         {
-            return await GetAsync(giftListId, itemId);
+            return await base.GetAsync(giftListId, itemId);
         }
 
         public async Task<GiftItem> CreateAsync(GiftItem giftItemEntity)
@@ -28,7 +28,7 @@ namespace MyGiftReg.Backend.Storage
                 throw new ValidationException($"Gift item with ID '{giftItemEntity.Id}' already exists in gift list '{giftItemEntity.GiftListId}'.");
             }
 
-            await CreateAsync(giftItemEntity);
+            await base.CreateAsync(giftItemEntity);
             return giftItemEntity;
         }
 
@@ -60,7 +60,7 @@ namespace MyGiftReg.Backend.Storage
                 return false;
             }
 
-            await DeleteAsync(giftListId, itemId);
+            await base.DeleteAsync(giftListId, itemId);
             return true;
         }
 

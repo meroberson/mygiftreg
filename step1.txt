@@ -38,7 +38,7 @@ Based on the review of Plan.txt, the following areas need clarification before w
 - **Table Names**: What should the Azure Storage Table names be?
 -- Let's use "EventTable", "GiftListTable", and "GiftItemTable".
 - **Partition/Row Keys**: What strategy should be used for partitioning data?
--- EventTable: Partition Key is empty, RowKey is the name of the Event. GiftListTable: PartitionKey is the name of the Event. RowKey is userid_guid, where userid is the username of the owner of the list and guid is a unique identifier. GiftItemTable: PartitionKey is the GUID of the list, row key is a GUID for the item.
+-- EventTable: Partition Key is empty, RowKey is the name of the Event. GiftListTable: PartitionKey is the name of the Event. RowKey is a guid identifying the list. GiftItemTable: PartitionKey is the GUID of the list, row key is a GUID for the item.
 - **Entity Relationships**: How should the entities be modeled in Azure Storage Tables?
 -- See above. PartitionKey identifies the parent and RowKey identifies the entity. This formalizes the hierarchy and allows efficient lookup.
 - **Indexes**: What queries need to be optimized?

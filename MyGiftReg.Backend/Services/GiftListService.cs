@@ -2,6 +2,7 @@ using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Backend.Exceptions;
+using MyGiftReg.Backend.Utilities;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyGiftReg.Backend.Services
@@ -31,6 +32,9 @@ namespace MyGiftReg.Backend.Services
                 var errorMessages = string.Join("; ", validationResults.Select(vr => vr.ErrorMessage));
                 throw new MyGiftReg.Backend.Exceptions.ValidationException($"Gift list validation failed: {errorMessages}");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(request.EventName);
 
             // Create the gift list entity
             var giftListEntity = new GiftList
@@ -70,6 +74,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Gift list ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             return await _giftListRepository.GetAsync(eventName, giftListId);
         }
 
@@ -103,6 +110,15 @@ namespace MyGiftReg.Backend.Services
             {
                 var errorMessages = string.Join("; ", validationResults.Select(vr => vr.ErrorMessage));
                 throw new MyGiftReg.Backend.Exceptions.ValidationException($"Gift list validation failed: {errorMessages}");
+            }
+
+            // Validate original event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
+            // Validate new event name conforms to Azure Storage naming restrictions (if changed)
+            if (!string.Equals(eventName, request.EventName, StringComparison.Ordinal))
+            {
+                AzureStorageValidator.ValidateEventNameForAzureStorage(request.EventName);
             }
 
             // Get the existing gift list
@@ -148,6 +164,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             // Get the existing gift list to verify ownership
             var existingGiftList = await _giftListRepository.GetAsync(eventName, giftListId);
             if (existingGiftList == null)
@@ -171,6 +190,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             return await _giftListRepository.GetByEventAsync(eventName);
         }
 
@@ -186,6 +208,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
             return await _giftListRepository.GetByEventAndUserAsync(eventName, userId);
         }
 
@@ -200,6 +225,9 @@ namespace MyGiftReg.Backend.Services
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
             return await _giftListRepository.GetByEventForOthersAsync(eventName, userId);
         }

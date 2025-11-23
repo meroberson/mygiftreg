@@ -39,6 +39,19 @@ The backend is a C# library that supports the following operations:
 
 This library is written to be concurrent and thread-safe by design, such that reads and modifications ot the backend can happen in parallel from different processes and the result is consistent. The backend storage is Azure Storage Tables. Use optimistic concurrency (ETag locking) as the primary mechanism for supporting concurrency.
 
+These are the tables:
+Events
+    PartitionKey is the empty string
+    RowKey is the name of the Event
+
+GiftLists
+    PartitionKey is the name of the Event
+    RowKey is the owner followed by an underscore followed by a GUID
+
+GiftItems
+    PartitionKey is the GUID of a gift list
+    RowKey is a GUID
+
 The frontend:
 
 The frontend is a web service that integrates with Entra to authenticate users. Family members need to have their accounts granted a role in an Entra application to get access to the website. Once they have access, they see the main interface.
@@ -69,13 +82,16 @@ The frontend enforces the valid actions a user may take. A user can take these a
 * Reserve an item in a list owned by a different user, if that item is not already reserved
 * Unreserve an iten in a list owned by a different user, if that item is reserved by the current user
 
-STEPS:
+This is the URL format:
+GET /Events : Main page listing all events
+POST /Events : Create / delete / edit events
+GET /Events/{eventName} : Details view of an event, including the existing gift lists
+GET /Events/{eventName}/GiftLists : Same as previous
+POST /Events/{eventaName}/GiftLists : Create / delete / edit gift lists
+GET /Events/{eventaName}/GiftLists/{giftListGUID} : View a gift list
+GET /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems : same as previous
+POST /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems : create / delete / edit gift items
+GET /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems/{giftItemGUID} : View a gift item
 
-The following steps must be followed during the development of this project.
-1. Create the solution and the backend project.
-2. Develop the API interface of the backend project without the API implementation.
-3. Implement the backend APIs and backend unit tests.
-4. Create the frontend project.
-5. Implement the REST APIs for the frontend and frontent unit tests.
-6. Implement the web interface for the frontend and web interface tests.
-7. Create deployment artifacts for deploying the project to Azure.
+The POST operations are done via forms.
+

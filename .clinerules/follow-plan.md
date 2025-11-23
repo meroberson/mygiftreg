@@ -1,5 +1,7 @@
-The plan for this project is located in the file Plan.txt. Initially, no steps are completed.
+The plan for this project is located in the file Plan.txt.
 
-As steps are completed (fully or partially), create/edit files called step1.txt, step2.txt, etc. and document what has been done so far and important decisions that were made in the process.
+Before starting a new task, read Plan.txt. This will help in the following ways:
+* You will know the intended design, so if a choice needs to be made you can follow the design.
+* If the task appears to contradict the design, you can raise this to the user's attention and ask for a decision.
 
-Before starting a task, review Plan.txt and all files named step*.txt in the main project directory to understand what has been done so far.
+Before completing a task, run the tests in the project and ensure they pass. The tests already pass, so if they do not pass then they were regressed, and the regression must be fixed before the task can be completed.

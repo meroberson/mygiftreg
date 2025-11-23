@@ -2,6 +2,7 @@ using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Backend.Exceptions;
+using MyGiftReg.Backend.Utilities;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyGiftReg.Backend.Services
@@ -32,6 +33,9 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException($"Event validation failed: {errorMessages}");
             }
 
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(request.Name);
+
             // Create the event entity
             var eventEntity = new Event
             {
@@ -58,6 +62,9 @@ namespace MyGiftReg.Backend.Services
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
             return await _eventRepository.GetAsync(eventName);
         }
@@ -89,6 +96,15 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException($"Event validation failed: {errorMessages}");
             }
 
+            // Validate original event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
+            // Validate new event name conforms to Azure Storage naming restrictions (if changed)
+            if (!string.Equals(eventName, request.Name, StringComparison.Ordinal))
+            {
+                AzureStorageValidator.ValidateEventNameForAzureStorage(request.Name);
+            }
+
             // Get the existing event
             var existingEvent = await _eventRepository.GetAsync(eventName);
             if (existingEvent == null)
@@ -99,9 +115,9 @@ namespace MyGiftReg.Backend.Services
             // Update the event
             var eventEntity = new Event
             {
-                Name = eventName,
+                Name = request.Name,
                 Description = request.Description,
-                EventDate = request.EventDate,
+                EventDate = request.EventDate?.ToUniversalTime(),
                 CreatedBy = existingEvent.CreatedBy,
                 CreatedDate = existingEvent.CreatedDate
             };
@@ -120,6 +136,9 @@ namespace MyGiftReg.Backend.Services
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
             }
+
+            // Validate event name conforms to Azure Storage naming restrictions
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
             return await _eventRepository.DeleteAsync(eventName);
         }
