@@ -1,6 +1,7 @@
 using Azure.Data.Tables;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using MyGiftReg.Frontend.Authorization;
@@ -93,7 +94,6 @@ static async Task InitializeAzureTables(IServiceProvider serviceProvider)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -103,12 +103,34 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
-app.UseAuthentication();  // Add authentication middleware
-app.UseAuthorization();   // Add authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
-// Use attribute routing (configured in controllers) - no additional routes needed
+// Default route first
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Handle Microsoft Identity authentication routes specifically
+app.MapControllerRoute(
+    name: "MicrosoftIdentity_SignIn",
+    pattern: "MicrosoftIdentity/Account/SignIn",
+    defaults: new { area = "MicrosoftIdentity", controller = "Account", action = "SignIn" });
+
+app.MapControllerRoute(
+    name: "MicrosoftIdentity_SignOut",
+    pattern: "MicrosoftIdentity/Account/SignOut",
+    defaults: new { area = "MicrosoftIdentity", controller = "Account", action = "SignOut" });
+
+app.MapControllerRoute(
+    name: "MicrosoftIdentity_SignedOut",
+    pattern: "MicrosoftIdentity/Account/SignedOut",
+    defaults: new { area = "MicrosoftIdentity", controller = "Account", action = "SignedOut" });
+
+// Access denied route
+app.MapControllerRoute(
+    name: "access_denied",
+    pattern: "MicrosoftIdentity/Account/AccessDenied",
+    defaults: new { controller = "Home", action = "AccessDenied" });
 
 app.Run();
