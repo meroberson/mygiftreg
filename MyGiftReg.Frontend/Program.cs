@@ -1,11 +1,35 @@
 using Azure.Data.Tables;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
+using MyGiftReg.Frontend.Authorization;
+using MyGiftReg.Frontend.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// Add authentication services
+builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))
+    .EnableTokenAcquisitionToCallDownstreamApi()
+    .AddDistributedTokenCaches();
 
-// Add session support for development user switching
+// Add authorization services
+builder.Services.AddAuthorization(options =>
+{
+    // Add policy for role-based access
+    options.AddPolicy("RequireMyGiftRegRole", policy =>
+        policy.Requirements.Add(new RoleAuthorizationRequirement("MyGiftReg.Access")));
+});
+
+// Add the authorization handler
+builder.Services.AddSingleton<IAuthorizationHandler, RoleAuthorizationHandler>();
+
+// Add services to the container.
+builder.Services.AddControllersWithViews()
+    .AddMicrosoftIdentityUI();
+
+// Add session support for development user switching (keeping for fallback)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -35,8 +59,8 @@ builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IEventService, MyGiftReg
 builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IGiftListService, MyGiftReg.Backend.Services.GiftListService>();
 builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IGiftItemService, MyGiftReg.Backend.Services.GiftItemService>();
 
-// Add development user service
-builder.Services.AddScoped<MyGiftReg.Frontend.Services.IDevelopmentUserService, MyGiftReg.Frontend.Services.DevelopmentUserService>();
+// Add Azure user service (replacing development user service)
+builder.Services.AddScoped<MyGiftReg.Frontend.Services.IAzureUserService, MyGiftReg.Frontend.Services.AzureUserService>();
 
 var app = builder.Build();
 
@@ -79,7 +103,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
-app.UseAuthorization();
+app.UseAuthentication();  // Add authentication middleware
+app.UseAuthorization();   // Add authorization middleware
 
 // Use attribute routing (configured in controllers) - no additional routes needed
 app.MapControllerRoute(

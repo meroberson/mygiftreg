@@ -1,28 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Frontend.Services;
+using MyGiftReg.Frontend.Authorization;
 
 namespace MyGiftReg.Frontend.Controllers
 {
     [Route("Events/{eventName}/GiftLists/{giftListId}/GiftItems")]
+    [Authorize(Policy = "RequireMyGiftRegRole")]
     public class GiftItemsController : Controller
     {
         private readonly IGiftItemService _giftItemService;
         private readonly IGiftListService _giftListService;
-        private readonly IDevelopmentUserService _developmentUserService;
+        private readonly IAzureUserService _azureUserService;
         private readonly ILogger<GiftItemsController> _logger;
 
         public GiftItemsController(
             IGiftItemService giftItemService, 
             IGiftListService giftListService,
-            IDevelopmentUserService developmentUserService, 
+            IAzureUserService azureUserService, 
             ILogger<GiftItemsController> logger)
         {
             _giftItemService = giftItemService;
             _giftListService = giftListService;
-            _developmentUserService = developmentUserService;
+            _azureUserService = azureUserService;
             _logger = logger;
         }
 
@@ -44,7 +47,7 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 var isOwner = giftListEntity.Owner == currentUserId;
 
                 // Handle different actions via query parameters
@@ -162,7 +165,7 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 var isOwner = giftListEntity.Owner == currentUserId;
 
                 switch (action.ToLower())
@@ -243,7 +246,7 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
-                var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, _developmentUserService.GetCurrentUserId());
+                var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, _azureUserService.GetCurrentUserId());
                 if (giftItemEntity == null)
                 {
                     return NotFound();
@@ -256,7 +259,7 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 var isOwner = giftListEntity.Owner == currentUserId;
 
                 ViewBag.EventName = eventName;
@@ -276,148 +279,6 @@ namespace MyGiftReg.Frontend.Controllers
             }
         }
 
-        // POST: Edit gift item
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Edit")]
-        public async Task<IActionResult> Edit(string eventName, string giftListId, string itemId, GiftItem model)
-        {
-            var currentUserId = _developmentUserService.GetCurrentUserId();
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var request = new CreateGiftItemRequest
-                    {
-                        Name = model.Name,
-                        Description = model.Description,
-                        Url = model.Url,
-                        GiftListId = giftListId
-                    };
-
-                    await _giftItemService.UpdateGiftItemAsync(eventName, giftListId, itemId, request, currentUserId);
-                    return RedirectToAction(nameof(Details), new { eventName, giftListId, itemId });
-                }
-                catch (MyGiftReg.Backend.Exceptions.NotFoundException)
-                {
-                    return NotFound();
-                }
-                catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
-                {
-                    ModelState.AddModelError("", ex.Message);
-                }
-            }
-
-            // If we get here, there was a validation error, reload the gift item for editing
-            var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, currentUserId);
-            if (giftItemEntity == null)
-            {
-                return NotFound();
-            }
-
-            // Preserve the original values
-            model.Name = giftItemEntity.Name;
-            model.Description = giftItemEntity.Description;
-            model.Url = giftItemEntity.Url;
-            model.Id = giftItemEntity.Id;
-            model.GiftListId = giftItemEntity.GiftListId;
-            model.CreatedDate = giftItemEntity.CreatedDate;
-            model.ReservedBy = giftItemEntity.ReservedBy;
-            
-            ViewBag.EventName = eventName;
-            ViewBag.GiftListId = giftListId;
-            ViewBag.GiftItemId = itemId;
-
-            return View("Edit", model);
-        }
-
-        // POST: Delete gift item
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Delete")]
-        public async Task<IActionResult> Delete(string eventName, string giftListId, string itemId)
-        {
-            try
-            {
-                var currentUserId = _developmentUserService.GetCurrentUserId();
-                await _giftItemService.DeleteGiftItemAsync(eventName, giftListId, itemId, currentUserId);
-                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Details), new { eventName, giftListId, itemId });
-            }
-        }
-
-        // POST: Reserve gift item
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Reserve")]
-        public async Task<IActionResult> Reserve(string eventName, string giftListId, string itemId)
-        {
-            try
-            {
-                // Check if user owns the gift list
-                var giftListEntity = await _giftListService.GetGiftListAsync(eventName, giftListId);
-                if (giftListEntity == null)
-                {
-                    return NotFound();
-                }
-
-                var currentUserId = _developmentUserService.GetCurrentUserId();
-                var isOwner = giftListEntity.Owner == currentUserId;
-
-                // Prevent owners from reserving items
-                if (isOwner)
-                {
-                    return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
-                }
-
-                await _giftItemService.ReserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
-                return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reserving gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Index), new { eventName, giftListId, view = "reserve", id = itemId });
-            }
-        }
-
-        // POST: Unreserve gift item
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Unreserve")]
-        public async Task<IActionResult> Unreserve(string eventName, string giftListId, string itemId)
-        {
-            try
-            {
-                // Check if user owns the gift list
-                var giftListEntity = await _giftListService.GetGiftListAsync(eventName, giftListId);
-                if (giftListEntity == null)
-                {
-                    return NotFound();
-                }
-
-                var currentUserId = _developmentUserService.GetCurrentUserId();
-                var isOwner = giftListEntity.Owner == currentUserId;
-
-                // Prevent owners from unreserving items
-                if (isOwner)
-                {
-                    return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
-                }
-
-                await _giftItemService.UnreserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
-                return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error unreserving gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Index), new { eventName, giftListId, view = "reserve", id = itemId });
-            }
-        }
-
         private async Task<IActionResult> HandleCreate(string eventName, string giftListId, CreateGiftItemRequest? request)
         {
             if (request == null)
@@ -429,7 +290,7 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var currentUserId = _azureUserService.GetCurrentUserId();
                     var createdGiftItem = await _giftItemService.CreateGiftItemAsync(eventName, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = giftListId, itemId = createdGiftItem!.Id.ToString() });
                 }
@@ -456,7 +317,7 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var currentUserId = _azureUserService.GetCurrentUserId();
                     await _giftItemService.UpdateGiftItemAsync(eventName, giftListId, itemId, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName, giftListId, itemId });
                 }
@@ -471,7 +332,7 @@ namespace MyGiftReg.Frontend.Controllers
             }
 
             // If we get here, there was a validation error, reload the gift item for editing
-            var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, _developmentUserService.GetCurrentUserId());
+            var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, _azureUserService.GetCurrentUserId());
             if (giftItemEntity == null)
             {
                 return NotFound();
@@ -492,7 +353,7 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 await _giftItemService.DeleteGiftItemAsync(eventName, giftListId, itemId, currentUserId);
                 return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
@@ -507,7 +368,7 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 await _giftItemService.ReserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
                 return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
             }
@@ -522,7 +383,7 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 await _giftItemService.UnreserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
                 return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
             }

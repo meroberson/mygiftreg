@@ -1,24 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Frontend.Services;
+using MyGiftReg.Frontend.Authorization;
 
 namespace MyGiftReg.Frontend.Controllers
 {
     [Route("Events")]
+    [Authorize(Policy = "RequireMyGiftRegRole")]
     public class EventsController : Controller
     {
         private readonly IEventService _eventService;
         private readonly IGiftListService _giftListService;
-        private readonly IDevelopmentUserService _developmentUserService;
+        private readonly IAzureUserService _azureUserService;
         private readonly ILogger<EventsController> _logger;
 
-        public EventsController(IEventService eventService, IGiftListService giftListService, IDevelopmentUserService developmentUserService, ILogger<EventsController> logger)
+        public EventsController(IEventService eventService, IGiftListService giftListService, IAzureUserService azureUserService, ILogger<EventsController> logger)
         {
             _eventService = eventService;
             _giftListService = giftListService;
-            _developmentUserService = developmentUserService;
+            _azureUserService = azureUserService;
             _logger = logger;
         }
 
@@ -153,7 +156,7 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 
                 // Get user's gift lists and others' gift lists for this event
                 var myGiftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, currentUserId);
@@ -190,7 +193,7 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var currentUserId = _azureUserService.GetCurrentUserId();
                     var createdEvent = await _eventService.CreateEventAsync(request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = createdEvent.Name });
                 }
@@ -214,7 +217,7 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var currentUserId = _azureUserService.GetCurrentUserId();
                     await _eventService.UpdateEventAsync(eventName, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = eventName });
                 }
@@ -244,7 +247,7 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var currentUserId = _azureUserService.GetCurrentUserId();
                 await _eventService.DeleteEventAsync(eventName, currentUserId);
                 return RedirectToAction(nameof(Index));
             }

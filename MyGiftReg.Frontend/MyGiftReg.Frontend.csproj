@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyGiftReg.Backend\MyGiftReg.Backend.csproj" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="2.16.0" />
+    <PackageReference Include="Microsoft.Identity.Web.UI" Version="2.16.0" />
   </ItemGroup>
 
   <PropertyGroup>

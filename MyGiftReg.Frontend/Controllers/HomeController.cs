@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MyGiftReg.Frontend.Models;
+using MyGiftReg.Frontend.Authorization;
 
 namespace MyGiftReg.Frontend.Controllers;
 
+[Authorize(Policy = "RequireMyGiftRegRole")]
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
