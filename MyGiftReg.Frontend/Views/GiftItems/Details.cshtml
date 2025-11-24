@@ -13,7 +13,6 @@
                     <li class="breadcrumb-item"><a href="@Url.Action("Index", "Events")">Events</a></li>
                     <li class="breadcrumb-item"><a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })">@ViewBag.EventName</a></li>
                     <li class="breadcrumb-item"><a href="@Url.Action("Details", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })">@ViewBag.GiftListName</a></li>
-                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "GiftItems", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })">Gift Items</a></li>
                     <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
                 </ol>
             </nav>
@@ -99,8 +98,8 @@
                         
                         <div class="card-footer">
                             <div class="d-flex justify-content-between">
-                                <a href="@Url.Action("Index", "GiftItems", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Back to Gift Items
+                                <a href="@Url.Action("Details", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Gift List
                                 </a>
                                 
                                 @if (!ViewBag.IsOwner)

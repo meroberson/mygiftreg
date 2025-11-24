@@ -22,7 +22,7 @@ namespace MyGiftReg.Frontend.Controllers
             _logger = logger;
         }
 
-        // GET: /Events/{eventName}/GiftLists or /Events/{eventName}/GiftLists?view=create or /Events/{eventName}/GiftLists?view=edit&id=giftListId
+        // GET: /Events/{eventName}/GiftLists?view=create or /Events/{eventName}/GiftLists?view=edit&id=giftListId
         [HttpGet]
         public async Task<IActionResult> Index(string eventName, string? view, string? id)
         {
@@ -63,10 +63,8 @@ namespace MyGiftReg.Frontend.Controllers
                         return View("Edit", giftListEntity);
                     
                     default:
-                        // Default action: show gift lists for the event
-                        var giftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, _developmentUserService.GetCurrentUserId());
-                        ViewBag.EventName = eventName;
-                        return View(giftLists);
+                        // Redirect to event details if no valid view specified
+                        return RedirectToAction("Details", "Events", new { eventName });
                 }
             }
             catch (Exception ex)
@@ -81,13 +79,12 @@ namespace MyGiftReg.Frontend.Controllers
                 else if (view == "edit")
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading the gift list for editing.";
-                    return RedirectToAction(nameof(Index), new { eventName = eventName });
+                    return RedirectToAction("Details", "Events", new { eventName });
                 }
                 else
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading gift lists. Please try again.";
-                    ViewBag.EventName = eventName;
-                    return View(new List<GiftList>());
+                    return RedirectToAction("Details", "Events", new { eventName });
                 }
             }
         }
@@ -146,7 +143,7 @@ namespace MyGiftReg.Frontend.Controllers
                     }
                 }
                 
-                return RedirectToAction(nameof(Index), new { eventName = eventName });
+                return RedirectToAction("Details", "Events", new { eventName = eventName });
             }
         }
 
@@ -175,6 +172,8 @@ namespace MyGiftReg.Frontend.Controllers
                 ViewBag.EventName = eventName;
                 ViewBag.GiftListId = giftListId;
                 ViewBag.GiftItems = giftItems;
+                ViewBag.IsOwner = giftListEntity.Owner == currentUserId;
+                ViewBag.CurrentUserId = currentUserId;
 
                 return View(giftListEntity);
             }
@@ -182,7 +181,7 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 _logger.LogError(ex, "Error getting gift list details for {EventName}/{GiftListId}", eventName, giftListId);
                 ViewBag.ErrorMessage = "An error occurred while loading gift list details. Please try again.";
-                return RedirectToAction(nameof(Index), new { eventName });
+                return RedirectToAction("Details", "Events", new { eventName });
             }
         }
 
@@ -291,6 +290,7 @@ namespace MyGiftReg.Frontend.Controllers
                 ViewBag.EventName = eventName;
                 ViewBag.GiftListId = giftListId;
                 ViewBag.GiftItems = giftItems;
+                ViewBag.CurrentUserId = currentUserId;
 
                 return View(giftListEntity);
             }

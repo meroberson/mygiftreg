@@ -56,21 +56,6 @@
                                     <small class="form-text text-muted">Link to the item (optional)</small>
                                 </div>
 
-                                <div class="mb-3">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <strong>Status:</strong>
-                                        @if (Model.IsReserved)
-                                        {
-                                            <span class="text-warning">This item is reserved by: @Model.ReservedBy</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-success">This item is available</span>
-                                        }
-                                    </div>
-                                </div>
-
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                     <a href="@Url.Action("Details", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })" class="btn btn-secondary me-md-2">
                                         <i class="fas fa-arrow-left"></i> Back to Gift List

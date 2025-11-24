@@ -26,7 +26,7 @@ namespace MyGiftReg.Frontend.Controllers
             _logger = logger;
         }
 
-        // GET: /Events/{eventName}/GiftLists/{giftListId}/GiftItems or with view=create, view=edit, view=reserve
+        // GET: /Events/{eventName}/GiftLists/{giftListId}/GiftItems?view=create, view=edit, view=reserve
         [HttpGet]
         public async Task<IActionResult> Index(string eventName, string giftListId, string? view, string? id)
         {
@@ -107,39 +107,33 @@ namespace MyGiftReg.Frontend.Controllers
                         return View("Reserve", reserveItemEntity);
                     
                     default:
-                        // Default action: show gift items for the gift list
-                        var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, currentUserId);
-                        ViewBag.EventName = eventName;
-                        ViewBag.GiftListId = giftListId;
-                        ViewBag.GiftListName = giftListEntity.Name;
-                        ViewBag.IsOwner = isOwner;
-                        ViewBag.GiftItems = giftItems;
-                        return View(giftItems);
+                        // Redirect to gift list details if no valid view specified
+                        return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling gift items action {Action} with eventName {EventName}, giftListId {GiftListId} and id {Id}", view, eventName, giftListId, id);
                 
-                    if (view == "create")
-                    {
-                        ViewBag.ErrorMessage = "An error occurred while loading the create gift item form.";
-                        return View("Create", new CreateGiftItemRequest { GiftListId = giftListId });
-                    }
+                if (view == "create")
+                {
+                    ViewBag.ErrorMessage = "An error occurred while loading the create gift item form.";
+                    return View("Create", new CreateGiftItemRequest { GiftListId = giftListId });
+                }
                 else if (view == "edit")
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading the gift item for editing.";
-                    return RedirectToAction(nameof(Index), new { eventName = eventName, giftListId = giftListId });
+                    return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
                 }
                 else if (view == "reserve")
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading the gift item for reservation.";
-                    return RedirectToAction("Reserve", "GiftLists", new { eventName = eventName, giftListId = giftListId });
+                    return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
                 }
                 else
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading gift items. Please try again.";
-                    return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
+                    return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
                 }
             }
         }

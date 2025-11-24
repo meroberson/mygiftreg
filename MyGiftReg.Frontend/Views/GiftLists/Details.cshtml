@@ -12,7 +12,6 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="@Url.Action("Index", "Events")">Events</a></li>
                     <li class="breadcrumb-item"><a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })">@ViewBag.EventName</a></li>
-                    <li class="breadcrumb-item"><a href="/Events/@ViewBag.EventName/GiftLists">Gift Lists</a></li>
                     <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
                 </ol>
             </nav>
@@ -134,7 +133,14 @@
                                                 {
                                                     <div class="alert alert-warning mb-2">
                                                         <small>
-                                                            <i class="fas fa-lock"></i> Reserved by @item.ReservedBy
+                                                            @if (item.ReservedBy == ViewBag.CurrentUserId)
+                                                            {
+                                                                <span><i class="fas fa-check-circle"></i> Reserved by you!</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span><i class="fas fa-lock"></i> Reserved by @item.ReservedBy</span>
+                                                            }
                                                         </small>
                                                     </div>
                                                 }
@@ -148,36 +154,55 @@
                                                 }
                                             }
                                         </div>
-                                        @if (ViewBag.IsOwner != null && ViewBag.IsOwner)
-                                        {
-                                            <div class="card-footer">
-                                                <div class="btn-group w-100" role="group">
+                                        <div class="card-footer">
+                                            <div class="btn-group w-100" role="group">
+                                                <a href="@Url.Action("Details", "GiftItems", new { 
+                                                    eventName = ViewBag.EventName, 
+                                                    giftListId = Model.Id, 
+                                                    itemId = item.Id 
+                                                })" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                
+                                                @if (ViewBag.IsOwner != null && ViewBag.IsOwner)
+                                                {
                                                     <a href="@Url.Action("Index", "GiftItems", new { 
                                                         eventName = ViewBag.EventName, 
                                                         giftListId = Model.Id, 
                                                         view = "edit", 
                                                         id = item.Id 
                                                     })" 
-                                                       class="btn btn-outline-primary btn-sm">
+                                                       class="btn btn-outline-secondary btn-sm">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </a>
-                                                </div>
+                                                }
+                                                else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && string.IsNullOrEmpty(item.ReservedBy))
+                                                {
+                                                    <a href="@Url.Action("Index", "GiftItems", new { 
+                                                        eventName = ViewBag.EventName, 
+                                                        giftListId = Model.Id, 
+                                                        view = "reserve", 
+                                                        id = item.Id 
+                                                    })" 
+                                                       class="btn btn-success btn-sm">
+                                                        <i class="fas fa-heart"></i> Reserve
+                                                    </a>
+                                                }
+                                                else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && !string.IsNullOrEmpty(item.ReservedBy))
+                                                {
+                                                    <a href="@Url.Action("Index", "GiftItems", new { 
+                                                        eventName = ViewBag.EventName, 
+                                                        giftListId = Model.Id, 
+                                                        view = "reserve", 
+                                                        id = item.Id 
+                                                    })" 
+                                                       class="btn btn-warning btn-sm">
+                                                        <i class="fas fa-heart-broken"></i> Unreserve
+                                                    </a>
+                                                }
                                             </div>
-                                        }
-                                        @if (ViewBag.IsOwner != null && !ViewBag.IsOwner && string.IsNullOrEmpty(item.ReservedBy))
-                                        {
-                                            <div class="card-footer">
-                                                <a href="@Url.Action("Index", "GiftItems", new { 
-                                                    eventName = ViewBag.EventName, 
-                                                    giftListId = Model.Id, 
-                                                    view = "reserve", 
-                                                    id = item.Id 
-                                                })" 
-                                                   class="btn btn-success btn-sm w-100">
-                                                    <i class="fas fa-heart"></i> Reserve
-                                                </a>
-                                            </div>
-                                        }
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -202,15 +227,9 @@
             <!-- Navigation Buttons -->
             <div class="row mt-4">
                 <div class="col-12">
-                    <div class="d-flex justify-content-between">
-                        <a href="/Events/@ViewBag.EventName/GiftLists" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Gift Lists
-                        </a>
-                        
-                        <a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })" class="btn btn-outline-primary">
-                            <i class="fas fa-home"></i> Back to Event
-                        </a>
-                    </div>
+                    <a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Event
+                    </a>
                 </div>
             </div>
         </div>
