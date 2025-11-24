@@ -83,7 +83,7 @@ namespace MyGiftReg.Backend.Services
             }
         }
 
-        public async Task<GiftItem?> GetGiftItemAsync(string eventName, string giftListId, string itemId)
+        public async Task<GiftItem?> GetGiftItemAsync(string eventName, string giftListId, string itemId, string viewerUserId)
         {
             if (string.IsNullOrWhiteSpace(eventName))
             {
@@ -100,10 +100,35 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Item ID cannot be null or empty.");
             }
 
+            if (string.IsNullOrWhiteSpace(viewerUserId))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Viewer user ID cannot be null or empty.");
+            }
+
             // Validate event name conforms to Azure Storage naming restrictions
             AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
 
-            return await _giftItemRepository.GetAsync(giftListId, itemId);
+            // Get the gift item
+            var giftItem = await _giftItemRepository.GetAsync(giftListId, itemId);
+            if (giftItem == null)
+            {
+                return null;
+            }
+
+            // Get the gift list to determine ownership
+            var giftList = await _giftListRepository.GetAsync(eventName, giftListId);
+            if (giftList == null)
+            {
+                return giftItem; // Return as-is if we can't determine ownership
+            }
+
+            // If the viewer is the owner, hide reservation status
+            if (giftList.Owner == viewerUserId)
+            {
+                giftItem.ReservedBy = null; // Hide reservation status from owner
+            }
+
+            return giftItem;
         }
 
         public async Task<GiftItem?> UpdateGiftItemAsync(string eventName, string giftListId, string itemId, CreateGiftItemRequest request, string userId)

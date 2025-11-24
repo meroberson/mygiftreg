@@ -65,7 +65,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Null(result.ReservedBy); // Should not be reserved initially
 
             // Verify it's persisted
-            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), result.Id.ToString());
+            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), result.Id.ToString(), userId);
             Assert.NotNull(retrieved);
             Assert.Equal(_testPrefix + "_Service Test Gift Item", retrieved.Name);
         }
@@ -167,7 +167,7 @@ namespace MyGiftReg.Tests.Integration
             var createdItem = await _giftItemService.CreateGiftItemAsync(_testPrefix + "_TestEvent", itemRequest, userId);
 
             // Act
-            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString());
+            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), userId);
 
             // Assert
             Assert.NotNull(result);
@@ -181,7 +181,7 @@ namespace MyGiftReg.Tests.Integration
         {
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftItemService.GetGiftItemAsync("", "giftlistid", "itemid"));
+                async () => await _giftItemService.GetGiftItemAsync("", "giftlistid", "itemid", "userid"));
         }
 
         [Fact]
@@ -189,7 +189,7 @@ namespace MyGiftReg.Tests.Integration
         {
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", "", "itemid"));
+                async () => await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", "", "itemid", "userid"));
         }
 
         [Fact]
@@ -197,14 +197,14 @@ namespace MyGiftReg.Tests.Integration
         {
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", "giftlistid", ""));
+                async () => await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", "giftlistid", "", "userid"));
         }
 
         [Fact]
         public async Task GetGiftItemAsync_NonExistingItem_ReturnsNull()
         {
             // Act
-            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_NonExistingEvent", "non-existing-gift-list-id", "non-existing-item-id");
+            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_NonExistingEvent", "non-existing-gift-list-id", "non-existing-item-id", "userid");
 
             // Assert
             Assert.Null(result);
@@ -250,7 +250,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(createdItem.ReservedBy, result.ReservedBy); // Reservation status should be preserved
 
             // Verify update persisted
-            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString());
+            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), userId);
             Assert.NotNull(retrieved);
             Assert.Equal(_testPrefix + "_Updated Service Test Gift Item", retrieved.Name);
             Assert.Equal("Updated Service Test Description", retrieved.Description);
@@ -366,7 +366,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.True(result);
 
             // Verify deletion
-            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString());
+            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), userId);
             Assert.Null(retrieved);
         }
 
@@ -545,7 +545,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(createdItem.Id, result.Id);
 
             // Verify reservation persisted
-            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString());
+            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
             Assert.NotNull(retrieved);
             Assert.Equal(reserverUserId, retrieved.ReservedBy);
         }
@@ -635,7 +635,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.True(result);
 
             // Verify unreservation persisted
-            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString());
+            var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
             Assert.NotNull(retrieved);
             Assert.Null(retrieved.ReservedBy);
         }
@@ -890,6 +890,71 @@ namespace MyGiftReg.Tests.Integration
             // Assert - Others should see reservation status
             Assert.Single(result);
             Assert.Equal(reserverUserId, result[0].ReservedBy);
+        }
+
+        [Fact]
+        public async Task GetGiftItemAsync_OwnerViewing_HidesReservationStatus()
+        {
+            // Arrange - Create gift list and item
+            var giftListRequest = new CreateGiftListRequest
+            {
+                Name = _testPrefix + "_Single Item Owner View Test Gift List",
+                EventName = _testPrefix + "_TestEvent"
+            };
+            var ownerUserId = "owneruser";
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+
+            var itemRequest = new CreateGiftItemRequest
+            {
+                Name = _testPrefix + "_Single Item Owner View Test Item",
+                Description = "Test single item owner view",
+                GiftListId = giftList.Id.ToString()
+            };
+            var item = await _giftItemService.CreateGiftItemAsync(_testPrefix + "_TestEvent", itemRequest, ownerUserId);
+
+            // Another user reserves the item
+            var reserverUserId = "reserveruser";
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+
+            // Act - Owner views the specific item
+            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), ownerUserId);
+
+            // Assert - Owner should not see reservation status
+            Assert.NotNull(result);
+            Assert.Null(result.ReservedBy);
+        }
+
+        [Fact]
+        public async Task GetGiftItemAsync_NonOwnerViewing_ShowsReservationStatus()
+        {
+            // Arrange - Create gift list and item
+            var giftListRequest = new CreateGiftListRequest
+            {
+                Name = _testPrefix + "_Single Item Non-Owner View Test Gift List",
+                EventName = _testPrefix + "_TestEvent"
+            };
+            var ownerUserId = "owneruser";
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+
+            var itemRequest = new CreateGiftItemRequest
+            {
+                Name = _testPrefix + "_Single Item Non-Owner View Test Item",
+                Description = "Test single item non-owner view",
+                GiftListId = giftList.Id.ToString()
+            };
+            var item = await _giftItemService.CreateGiftItemAsync(_testPrefix + "_TestEvent", itemRequest, ownerUserId);
+
+            // Reserve the item
+            var reserverUserId = "reserveruser";
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+
+            // Act - Another user views the specific item
+            var viewerUserId = "vieweruser";
+            var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), viewerUserId);
+
+            // Assert - Others should see reservation status
+            Assert.NotNull(result);
+            Assert.Equal(reserverUserId, result.ReservedBy);
         }
     }
 }

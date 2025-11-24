@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
+using MyGiftReg.Frontend.Services;
 
 namespace MyGiftReg.Frontend.Controllers
 {
@@ -10,15 +11,14 @@ namespace MyGiftReg.Frontend.Controllers
     {
         private readonly IEventService _eventService;
         private readonly IGiftListService _giftListService;
+        private readonly IDevelopmentUserService _developmentUserService;
         private readonly ILogger<EventsController> _logger;
 
-        // Temporary development user ID until Entra authentication is implemented
-        private const string DevelopmentUserId = "development-user";
-
-        public EventsController(IEventService eventService, IGiftListService giftListService, ILogger<EventsController> logger)
+        public EventsController(IEventService eventService, IGiftListService giftListService, IDevelopmentUserService developmentUserService, ILogger<EventsController> logger)
         {
             _eventService = eventService;
             _giftListService = giftListService;
+            _developmentUserService = developmentUserService;
             _logger = logger;
         }
 
@@ -153,9 +153,11 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                
                 // Get user's gift lists and others' gift lists for this event
-                var myGiftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, DevelopmentUserId);
-                var othersGiftLists = await _giftListService.GetGiftListsByEventForOthersAsync(eventName, DevelopmentUserId);
+                var myGiftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, currentUserId);
+                var othersGiftLists = await _giftListService.GetGiftListsByEventForOthersAsync(eventName, currentUserId);
 
                 // Combine the lists with a flag to indicate ownership
                 var allGiftLists = myGiftLists.Select(gl => new { GiftList = gl, IsOwnedByCurrentUser = true })
@@ -188,7 +190,8 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var createdEvent = await _eventService.CreateEventAsync(request, DevelopmentUserId);
+                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var createdEvent = await _eventService.CreateEventAsync(request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = createdEvent.Name });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
@@ -211,7 +214,8 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    await _eventService.UpdateEventAsync(eventName, request, DevelopmentUserId);
+                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    await _eventService.UpdateEventAsync(eventName, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = eventName });
                 }
                 catch (MyGiftReg.Backend.Exceptions.NotFoundException)
@@ -240,7 +244,8 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                await _eventService.DeleteEventAsync(eventName, DevelopmentUserId);
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                await _eventService.DeleteEventAsync(eventName, currentUserId);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)

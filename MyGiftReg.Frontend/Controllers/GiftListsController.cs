@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
+using MyGiftReg.Frontend.Services;
 
 namespace MyGiftReg.Frontend.Controllers
 {
@@ -10,15 +11,14 @@ namespace MyGiftReg.Frontend.Controllers
     {
         private readonly IGiftListService _giftListService;
         private readonly IGiftItemService _giftItemService;
+        private readonly IDevelopmentUserService _developmentUserService;
         private readonly ILogger<GiftListsController> _logger;
 
-        // Temporary development user ID until Entra authentication is implemented
-        private const string DevelopmentUserId = "development-user";
-
-        public GiftListsController(IGiftListService giftListService, IGiftItemService giftItemService, ILogger<GiftListsController> logger)
+        public GiftListsController(IGiftListService giftListService, IGiftItemService giftItemService, IDevelopmentUserService developmentUserService, ILogger<GiftListsController> logger)
         {
             _giftListService = giftListService;
             _giftItemService = giftItemService;
+            _developmentUserService = developmentUserService;
             _logger = logger;
         }
 
@@ -56,14 +56,15 @@ namespace MyGiftReg.Frontend.Controllers
                         ViewBag.EventName = eventName;
                         
                         // Get gift items for this gift list
-                        var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, id, DevelopmentUserId);
+                        var currentUserId = _developmentUserService.GetCurrentUserId();
+                        var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, id, currentUserId);
                         ViewBag.GiftItems = giftItems;
                         
                         return View("Edit", giftListEntity);
                     
                     default:
                         // Default action: show gift lists for the event
-                        var giftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, DevelopmentUserId);
+                        var giftLists = await _giftListService.GetGiftListsByEventAndUserAsync(eventName, _developmentUserService.GetCurrentUserId());
                         ViewBag.EventName = eventName;
                         return View(giftLists);
                 }
@@ -166,8 +167,10 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                
                 // Get gift items for this gift list
-                var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, DevelopmentUserId);
+                var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, currentUserId);
 
                 ViewBag.EventName = eventName;
                 ViewBag.GiftListId = giftListId;
@@ -189,6 +192,7 @@ namespace MyGiftReg.Frontend.Controllers
         [Route("Edit")]
         public async Task<IActionResult> Edit(string eventName, string giftListId, GiftList model)
         {
+            var currentUserId = _developmentUserService.GetCurrentUserId();
             if (ModelState.IsValid)
             {
                 try
@@ -199,7 +203,7 @@ namespace MyGiftReg.Frontend.Controllers
                         EventName = eventName
                     };
 
-                    await _giftListService.UpdateGiftListAsync(eventName, giftListId, request, DevelopmentUserId);
+                    await _giftListService.UpdateGiftListAsync(eventName, giftListId, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName, giftListId });
                 }
                 catch (MyGiftReg.Backend.Exceptions.NotFoundException)
@@ -229,7 +233,7 @@ namespace MyGiftReg.Frontend.Controllers
             ViewBag.GiftListId = giftListId;
             ViewBag.EventName = eventName;
             
-            var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, DevelopmentUserId);
+            var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, currentUserId);
             ViewBag.GiftItems = giftItems;
 
             return View("Edit", model);
@@ -243,7 +247,8 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                await _giftListService.DeleteGiftListAsync(eventName, giftListId, DevelopmentUserId);
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                await _giftListService.DeleteGiftListAsync(eventName, giftListId, currentUserId);
                 return RedirectToAction("Details", "Events", new { eventName });
             }
             catch (Exception ex)
@@ -270,8 +275,18 @@ namespace MyGiftReg.Frontend.Controllers
                     return NotFound();
                 }
 
+                // Check if the current user owns this gift list
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                var isOwner = giftListEntity.Owner == currentUserId;
+
+                // Prevent owners from accessing reservation interface
+                if (isOwner)
+                {
+                    return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = giftListId });
+                }
+
                 // Get gift items for reservation
-                var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, DevelopmentUserId);
+                var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, currentUserId);
 
                 ViewBag.EventName = eventName;
                 ViewBag.GiftListId = giftListId;
@@ -298,7 +313,8 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var createdGiftList = await _giftListService.CreateGiftListAsync(request, DevelopmentUserId);
+                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    var createdGiftList = await _giftListService.CreateGiftListAsync(request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = createdGiftList!.Id });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
@@ -321,7 +337,8 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    await _giftListService.UpdateGiftListAsync(eventName, giftListId, request, DevelopmentUserId);
+                    var currentUserId = _developmentUserService.GetCurrentUserId();
+                    await _giftListService.UpdateGiftListAsync(eventName, giftListId, request, currentUserId);
                     return RedirectToAction(nameof(Details), new { eventName, giftListId });
                 }
                 catch (MyGiftReg.Backend.Exceptions.NotFoundException)
@@ -351,7 +368,8 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                await _giftListService.DeleteGiftListAsync(eventName, giftListId, DevelopmentUserId);
+                var currentUserId = _developmentUserService.GetCurrentUserId();
+                await _giftListService.DeleteGiftListAsync(eventName, giftListId, currentUserId);
                 return RedirectToAction("Details", "Events", new { eventName });
             }
             catch (Exception ex)

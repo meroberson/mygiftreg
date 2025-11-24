@@ -1,0 +1,154 @@
+@model MyGiftReg.Backend.Models.GiftItem
+
+@{
+    ViewData["Title"] = "Reserve Gift Item";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Events")">Events</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })">@ViewBag.EventName</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Reserve", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })">@ViewBag.GiftListName</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reserve Gift Item</li>
+                </ol>
+            </nav>
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+                </div>
+            }
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-bookmark"></i> Reserve Gift Item
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Gift Item Details -->
+                            <div class="mb-4">
+                                <h4 class="card-title">@Model.Name</h4>
+                                
+                                @if (!string.IsNullOrEmpty(Model.Description))
+                                {
+                                    <p class="text-muted">@Model.Description</p>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(Model.Url))
+                                {
+                                    <p>
+                                        <a href="@Model.Url" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-external-link-alt"></i> View Item Link
+                                        </a>
+                                    </p>
+                                }
+                            </div>
+
+                            <!-- Current Reservation Status -->
+                            <div class="mb-4">
+                                @if (Model.IsReserved)
+                                {
+                                    @if (Model.ReservedBy == ViewBag.CurrentUserId)
+                                    {
+                                        <div class="alert alert-success">
+                                            <i class="fas fa-check-circle"></i>
+                                            <strong>This item is already reserved by you!</strong>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <strong>This item is already reserved by: @Model.ReservedBy</strong>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>This item is currently available for reservation.</strong>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="@Url.Action("Reserve", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-arrow-left"></i> Back to Gift List
+                                </a>
+                                
+                                @if (Model.IsReserved)
+                                {
+                                    @if (Model.ReservedBy == ViewBag.CurrentUserId)
+                                    {
+                                        <form method="post" asp-action="Unreserve" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-itemId="@ViewBag.GiftItemId" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-warning"
+                                                    onclick="return confirm('Are you sure you want to unreserve this item? It will become available for others to reserve.');">
+                                                <i class="fas fa-bookmark-open"></i> Unreserve Item
+                                            </button>
+                                        </form>
+                                    }
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="Reserve" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-itemId="@ViewBag.GiftItemId" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-success"
+                                                onclick="return confirm('Are you sure you want to reserve this item? It will be marked as reserved for you.');">
+                                            <i class="fas fa-bookmark"></i> Reserve Item
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+
+                            <!-- Additional Information -->
+                            <div class="mt-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    When you reserve an item, other users will see that it's reserved but won't know who reserved it.
+                                    You can unreserve the item at any time to make it available again.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Add any dynamic behavior here if needed
+            
+            // Confirm before reserve/unreserve actions
+            $('form').on('submit', function(e) {
+                var form = $(this);
+                var action = form.attr('asp-action');
+                
+                if (action === 'Reserve') {
+                    if (!confirm('Are you sure you want to reserve this item? It will be marked as reserved for you.')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                } else if (action === 'Unreserve') {
+                    if (!confirm('Are you sure you want to unreserve this item? It will become available for others to reserve.')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}

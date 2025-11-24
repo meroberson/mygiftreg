@@ -5,6 +5,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add session support for development user switching
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Add HTTP context accessor
+builder.Services.AddHttpContextAccessor();
+
 // Add Azure Table Storage configuration and clients
 builder.Services.AddSingleton<MyGiftReg.Backend.Storage.AzureTableConfig>();
 builder.Services.AddSingleton(sp => 
@@ -22,6 +34,9 @@ builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IGiftItemRepository, MyG
 builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IEventService, MyGiftReg.Backend.Services.EventService>();
 builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IGiftListService, MyGiftReg.Backend.Services.GiftListService>();
 builder.Services.AddScoped<MyGiftReg.Backend.Interfaces.IGiftItemService, MyGiftReg.Backend.Services.GiftItemService>();
+
+// Add development user service
+builder.Services.AddScoped<MyGiftReg.Frontend.Services.IDevelopmentUserService, MyGiftReg.Frontend.Services.DevelopmentUserService>();
 
 var app = builder.Build();
 
@@ -63,6 +78,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
 app.UseAuthorization();
 
 // Use attribute routing (configured in controllers) - no additional routes needed

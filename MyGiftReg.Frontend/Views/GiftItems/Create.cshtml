@@ -1,0 +1,98 @@
+@model MyGiftReg.Backend.Models.DTOs.CreateGiftItemRequest
+
+@{
+    ViewData["Title"] = "Add Gift Item";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Events")">Events</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Details", "Events", new { eventName = ViewBag.EventName })">@ViewBag.EventName</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Details", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })">@ViewBag.GiftListName</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add Gift Item</li>
+                </ol>
+            </nav>
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+                </div>
+            }
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-plus"></i> Add New Gift Item
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" asp-action="Index" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId">
+                                <input type="hidden" name="action" value="create" />
+                                <input type="hidden" asp-for="GiftListId" />
+                                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label"></label>
+                                    <input asp-for="Name" class="form-control" placeholder="Enter item name..." />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label"></label>
+                                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter item description (optional)..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                    <small class="form-text text-muted">Provide details about size, color, preferences, etc.</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Url" class="form-label"></label>
+                                    <input asp-for="Url" class="form-control" placeholder="https://example.com/item-url" />
+                                    <span asp-validation-for="Url" class="text-danger"></span>
+                                    <small class="form-text text-muted">Link to the item (optional)</small>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="@Url.Action("Details", "GiftLists", new { eventName = ViewBag.EventName, giftListId = ViewBag.GiftListId })" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-arrow-left"></i> Back to Gift List
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Add Item
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Auto-focus on the name field
+            $('#Name').focus();
+            
+            // Add any additional validation or dynamic behavior
+            $('form').on('submit', function(e) {
+                // Client-side validation
+                var name = $('#Name').val().trim();
+                if (!name) {
+                    e.preventDefault();
+                    alert('Please enter an item name.');
+                    $('#Name').focus();
+                    return false;
+                }
+            });
+        });
+    </script>
+}
