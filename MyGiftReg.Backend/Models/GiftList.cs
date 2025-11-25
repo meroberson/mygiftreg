@@ -14,6 +14,7 @@ namespace MyGiftReg.Backend.Models
         // Domain model properties
         public string Name { get; set; } = string.Empty;
         public string Owner { get; set; } = string.Empty;
+        public string OwnerDisplayName { get; set; } = string.Empty;
         public string EventName { get; set; } = string.Empty;
         public Guid Id { get; set; } = Guid.NewGuid();
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;

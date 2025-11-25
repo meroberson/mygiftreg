@@ -177,6 +177,7 @@ namespace MyGiftReg.Frontend.Controllers
                 ViewBag.GiftItems = giftItems;
                 ViewBag.IsOwner = giftListEntity.Owner == currentUserId;
                 ViewBag.CurrentUserId = currentUserId;
+                ViewBag.OwnerDisplayName = giftListEntity.OwnerDisplayName;
 
                 return View(giftListEntity);
             }
@@ -222,6 +223,7 @@ namespace MyGiftReg.Frontend.Controllers
                 ViewBag.GiftListId = giftListId;
                 ViewBag.GiftItems = giftItems;
                 ViewBag.CurrentUserId = currentUserId;
+                ViewBag.OwnerDisplayName = giftListEntity.OwnerDisplayName;
 
                 return View(giftListEntity);
             }
@@ -244,8 +246,14 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 try
                 {
-                    var currentUserId = _azureUserService.GetCurrentUserId();
-                    var createdGiftList = await _giftListService.CreateGiftListAsync(request, currentUserId);
+                    var currentUser = _azureUserService.GetCurrentUser();
+                    if (currentUser == null)
+                    {
+                        ModelState.AddModelError("", "Unable to retrieve current user information.");
+                        return View("Create", request);
+                    }
+
+                    var createdGiftList = await _giftListService.CreateGiftListAsync(request, currentUser.Id, currentUser.DisplayName);
                     return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = createdGiftList!.Id });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)

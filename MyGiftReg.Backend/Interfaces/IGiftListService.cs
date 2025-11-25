@@ -5,7 +5,7 @@ namespace MyGiftReg.Backend.Interfaces
 {
     public interface IGiftListService
     {
-        Task<GiftList?> CreateGiftListAsync(CreateGiftListRequest request, string userId);
+        Task<GiftList?> CreateGiftListAsync(CreateGiftListRequest request, string userId, string userDisplayName);
         Task<GiftList?> GetGiftListAsync(string eventName, string giftListId);
         Task<GiftList?> UpdateGiftListAsync(string eventName, string giftListId, CreateGiftListRequest request, string userId);
         Task<bool> DeleteGiftListAsync(string eventName, string giftListId, string userId);

@@ -67,7 +67,7 @@
                                     {
                                         <div class="alert alert-warning">
                                             <i class="fas fa-exclamation-triangle"></i>
-                                            <strong>This item is already reserved by: @Model.ReservedBy</strong>
+                                            <strong>This item is already reserved by: @Model.ReservedByDisplayName</strong>
                                         </div>
                                     }
                                 }
@@ -90,8 +90,9 @@
                                 {
                                     @if (Model.ReservedBy == ViewBag.CurrentUserId)
                                     {
-                                        <form method="post" asp-action="Unreserve" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-itemId="@ViewBag.GiftItemId" 
+                                        <form method="post" asp-action="Index" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-id="@ViewBag.GiftItemId" 
                                               style="display: inline;">
+                                            <input type="hidden" name="action" value="unreserve" />
                                             <button type="submit" class="btn btn-warning"
                                                     onclick="return confirm('Are you sure you want to unreserve this item? It will become available for others to reserve.');">
                                                 <i class="fas fa-bookmark-open"></i> Unreserve Item
@@ -101,8 +102,9 @@
                                 }
                                 else
                                 {
-                                    <form method="post" asp-action="Reserve" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-itemId="@ViewBag.GiftItemId" 
+                                    <form method="post" asp-action="Index" asp-route-eventName="@ViewBag.EventName" asp-route-giftListId="@ViewBag.GiftListId" asp-route-id="@ViewBag.GiftItemId" 
                                           style="display: inline;">
+                                        <input type="hidden" name="action" value="reserve" />
                                         <button type="submit" class="btn btn-success"
                                                 onclick="return confirm('Are you sure you want to reserve this item? It will be marked as reserved for you.');">
                                             <i class="fas fa-bookmark"></i> Reserve Item
@@ -135,14 +137,14 @@
             // Confirm before reserve/unreserve actions
             $('form').on('submit', function(e) {
                 var form = $(this);
-                var action = form.attr('asp-action');
+                var action = form.find('input[name="action"]').val();
                 
-                if (action === 'Reserve') {
+                if (action === 'reserve') {
                     if (!confirm('Are you sure you want to reserve this item? It will be marked as reserved for you.')) {
                         e.preventDefault();
                         return false;
                     }
-                } else if (action === 'Unreserve') {
+                } else if (action === 'unreserve') {
                     if (!confirm('Are you sure you want to unreserve this item? It will become available for others to reserve.')) {
                         e.preventDefault();
                         return false;

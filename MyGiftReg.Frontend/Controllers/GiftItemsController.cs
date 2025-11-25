@@ -106,6 +106,7 @@ namespace MyGiftReg.Frontend.Controllers
                         ViewBag.GiftListName = giftListEntity.Name;
                         ViewBag.CurrentUserId = currentUserId;
                         ViewBag.IsOwner = isOwner;
+                        ViewBag.ReservedByDisplayName = reserveItemEntity.ReservedByDisplayName;
                         
                         return View("Reserve", reserveItemEntity);
                     
@@ -268,6 +269,7 @@ namespace MyGiftReg.Frontend.Controllers
                 ViewBag.GiftListName = giftListEntity.Name;
                 ViewBag.CurrentUserId = currentUserId;
                 ViewBag.IsOwner = isOwner;
+                ViewBag.ReservedByDisplayName = giftItemEntity.ReservedByDisplayName;
 
                 return View(giftItemEntity);
             }
@@ -368,8 +370,13 @@ namespace MyGiftReg.Frontend.Controllers
         {
             try
             {
-                var currentUserId = _azureUserService.GetCurrentUserId();
-                await _giftItemService.ReserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
+                var currentUser = _azureUserService.GetCurrentUser();
+                if (currentUser == null)
+                {
+                    return Unauthorized("Unable to retrieve current user information.");
+                }
+
+                await _giftItemService.ReserveGiftItemAsync(eventName, giftListId, itemId, currentUser.Id, currentUser.DisplayName);
                 return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
             }
             catch (Exception ex)

@@ -38,7 +38,7 @@
                             <h3 class="card-title mb-0">
                                 <i class="fas fa-gift"></i> @Model.Name
                             </h3>
-                            <small class="text-muted">Owned by @Model.Owner</small>
+                            <small class="text-muted">Owned by @Model.OwnerDisplayName</small>
                         </div>
                         <div class="card-body">
                             <p class="mb-0">Browse and reserve gift items from this list. Items that are already reserved will show the current reserver.</p>
@@ -92,7 +92,7 @@
                                                                 }
                                                                 else
                                                                 {
-                                                                    <span><i class="fas fa-lock"></i> Reserved by @item.ReservedBy</span>
+                                                                    <span><i class="fas fa-lock"></i> Reserved by @item.ReservedByDisplayName</span>
                                                                 }
                                                             </small>
                                                         </div>

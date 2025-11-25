@@ -21,7 +21,7 @@
                 <div>
                     <h1 class="display-5">@Model.Name</h1>
                     <p class="lead text-muted">
-                        <i class="fas fa-user"></i> Owned by @Model.Owner
+                        <i class="fas fa-user"></i> Owned by @Model.OwnerDisplayName
                     </p>
                 </div>
                 <div>
@@ -43,8 +43,7 @@
             @if (ViewBag.ErrorMessage != null)
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    @ViewBag.ErrorMessage
+                    <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
@@ -57,7 +56,7 @@
                             <h5 class="card-title"><i class="fas fa-info-circle"></i> Gift List Details</h5>
                             <dl class="row">
                                 <dt class="col-sm-4">Owner:</dt>
-                                <dd class="col-sm-8">@Model.Owner</dd>
+                                <dd class="col-sm-8">@Model.OwnerDisplayName</dd>
                                 <dt class="col-sm-4">Created Date:</dt>
                                 <dd class="col-sm-8">@Model.CreatedDate.ToString("MMMM dd, yyyy 'at' h:mm tt")</dd>
                             </dl>
@@ -139,7 +138,7 @@
                                                             }
                                                             else
                                                             {
-                                                                <span><i class="fas fa-lock"></i> Reserved by @item.ReservedBy</span>
+                                                                <span><i class="fas fa-lock"></i> Reserved by @item.ReservedByDisplayName</span>
                                                             }
                                                         </small>
                                                     </div>
@@ -168,7 +167,7 @@
                                                 @if (ViewBag.IsOwner != null && ViewBag.IsOwner)
                                                 {
                                                     <a href="@Url.Action("Index", "GiftItems", new { 
-                                                        eventName = ViewBag.EventName, 
+                                                        eventName = ViewBag.EventName,
                                                         giftListId = Model.Id, 
                                                         view = "edit", 
                                                         id = item.Id 
@@ -198,7 +197,7 @@
                                                         id = item.Id 
                                                     })" 
                                                        class="btn btn-warning btn-sm">
-                                                        <i class="fas fa-heart-broken"></i> Unreserve
+                                                        <i class="fas fas-heart-broken"></i> Unreserve
                                                     </a>
                                                 }
                                             </div>

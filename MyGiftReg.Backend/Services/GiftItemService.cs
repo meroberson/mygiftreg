@@ -126,6 +126,7 @@ namespace MyGiftReg.Backend.Services
             if (giftList.Owner == viewerUserId)
             {
                 giftItem.ReservedBy = null; // Hide reservation status from owner
+                giftItem.ReservedByDisplayName = null; // Hide reservation display name from owner
             }
 
             return giftItem;
@@ -194,6 +195,7 @@ namespace MyGiftReg.Backend.Services
                 Url = request.Url,
                 GiftListId = existingGiftItem.GiftListId,
                 ReservedBy = existingGiftItem.ReservedBy,
+                ReservedByDisplayName = existingGiftItem.ReservedByDisplayName,
                 CreatedDate = existingGiftItem.CreatedDate
             };
 
@@ -275,13 +277,14 @@ namespace MyGiftReg.Backend.Services
                 foreach (var item in allItems)
                 {
                     item.ReservedBy = null; // Hide reservation status from owner
+                    item.ReservedByDisplayName = null; // Hide reservation display name from owner
                 }
             }
 
             return allItems;
         }
 
-        public async Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId)
+        public async Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId, string userDisplayName)
         {
             if (string.IsNullOrWhiteSpace(eventName))
             {
@@ -301,6 +304,11 @@ namespace MyGiftReg.Backend.Services
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userDisplayName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("User display name cannot be null or empty.");
             }
 
             // Validate event name conforms to Azure Storage naming restrictions
@@ -333,6 +341,7 @@ namespace MyGiftReg.Backend.Services
 
             // Reserve the item
             existingGiftItem.ReservedBy = userId;
+            existingGiftItem.ReservedByDisplayName = userDisplayName;
 
             // Update the item
             try
@@ -386,6 +395,7 @@ namespace MyGiftReg.Backend.Services
 
             // Unreserve the item
             existingGiftItem.ReservedBy = null;
+            existingGiftItem.ReservedByDisplayName = null;
 
             // Update the item
             try

@@ -16,6 +16,7 @@ namespace MyGiftReg.Backend.Models
         public string Description { get; set; } = string.Empty;
         public string? Url { get; set; }
         public string? ReservedBy { get; set; }
+        public string? ReservedByDisplayName { get; set; }
         public Guid GiftListId { get; set; }
         public Guid Id { get; set; } = Guid.NewGuid();
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;

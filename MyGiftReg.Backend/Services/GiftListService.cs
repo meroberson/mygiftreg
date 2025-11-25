@@ -16,11 +16,16 @@ namespace MyGiftReg.Backend.Services
             _giftListRepository = giftListRepository;
         }
 
-        public async Task<GiftList?> CreateGiftListAsync(CreateGiftListRequest request, string userId)
+        public async Task<GiftList?> CreateGiftListAsync(CreateGiftListRequest request, string userId, string userDisplayName)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userDisplayName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("User display name cannot be null or empty.");
             }
 
             // Validate the request
@@ -42,6 +47,7 @@ namespace MyGiftReg.Backend.Services
                 Name = request.Name,
                 EventName = request.EventName,
                 Owner = userId,
+                OwnerDisplayName = userDisplayName,
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -141,6 +147,7 @@ namespace MyGiftReg.Backend.Services
                 Name = request.Name,
                 EventName = request.EventName,
                 Owner = existingGiftList.Owner,
+                OwnerDisplayName = existingGiftList.OwnerDisplayName,
                 CreatedDate = existingGiftList.CreatedDate
             };
 

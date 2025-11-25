@@ -43,7 +43,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "serviceuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -80,7 +80,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             // Other user tries to add item
             var itemRequest = new CreateGiftItemRequest
@@ -156,7 +156,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -220,7 +220,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -266,7 +266,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -349,7 +349,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -390,7 +390,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -433,7 +433,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequests = new List<CreateGiftItemRequest>
             {
@@ -451,7 +451,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Reserve one item as a different user
             var otherUserId = "otheruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[1].Id.ToString(), otherUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[1].Id.ToString(), otherUserId, "Test User");
 
             // Act - Owner views their own list
             var result = await _giftItemService.GetGiftItemsByListAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), ownerUserId);
@@ -473,7 +473,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequests = new List<CreateGiftItemRequest>
             {
@@ -492,8 +492,8 @@ namespace MyGiftReg.Tests.Integration
             // Reserve items as different users
             var otherUserId1 = "otheruser1";
             var otherUserId2 = "otheruser2";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[1].Id.ToString(), otherUserId1);
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[2].Id.ToString(), otherUserId2);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[1].Id.ToString(), otherUserId1, "Test User 1");
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItems[2].Id.ToString(), otherUserId2, "Test User 2");
 
             // Act - Other user views the list
             var viewerUserId = "vieweruser";
@@ -524,7 +524,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -537,17 +537,19 @@ namespace MyGiftReg.Tests.Integration
             var reserverUserId = "reserveruser";
 
             // Act
-            var result = await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
+            var result = await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId, "Test User");
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(reserverUserId, result.ReservedBy);
+            Assert.Equal("Test User", result.ReservedByDisplayName);
             Assert.Equal(createdItem.Id, result.Id);
 
             // Verify reservation persisted
             var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
             Assert.NotNull(retrieved);
             Assert.Equal(reserverUserId, retrieved.ReservedBy);
+            Assert.Equal("Test User", retrieved.ReservedByDisplayName);
         }
 
         [Fact]
@@ -560,7 +562,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -572,7 +574,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert - Owner tries to reserve their own item
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), ownerUserId));
+                async () => await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), ownerUserId, "Test User"));
         }
 
         [Fact]
@@ -585,7 +587,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -597,12 +599,12 @@ namespace MyGiftReg.Tests.Integration
 
             // First user reserves
             var firstReserverUserId = "firstreserver";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), firstReserverUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), firstReserverUserId, "Test User");
 
             // Act & Assert - Second user tries to reserve
             var secondReserverUserId = "secondreserver";
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), secondReserverUserId));
+                async () => await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), secondReserverUserId, "Test User"));
         }
 
         [Fact]
@@ -615,7 +617,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -626,7 +628,7 @@ namespace MyGiftReg.Tests.Integration
             var createdItem = await _giftItemService.CreateGiftItemAsync(_testPrefix + "_TestEvent", itemRequest, ownerUserId);
 
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId, "Test User");
 
             // Act
             var result = await _giftItemService.UnreserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
@@ -650,7 +652,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -662,7 +664,7 @@ namespace MyGiftReg.Tests.Integration
 
             // One user reserves
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId, "Test User");
 
             // Act & Assert - Different user tries to unreserve
             var otherUserId = "otheruser";
@@ -680,7 +682,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequests = new List<CreateGiftItemRequest>
             {
@@ -720,7 +722,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             // Act
             var result = await _giftItemService.GetGiftItemsByListAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), userId);
@@ -740,7 +742,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, userId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -777,7 +779,7 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Owned Gift Item Test Gift List",
                 EventName = _testPrefix + "_TestEvent"
             };
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -812,7 +814,7 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Owned Delete Test Gift List",
                 EventName = _testPrefix + "_TestEvent"
             };
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -837,7 +839,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -849,7 +851,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Another user reserves the item
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId, "Test User");
 
             // Act - Owner views their list
             var result = await _giftItemService.GetGiftItemsByListAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), ownerUserId);
@@ -869,7 +871,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -881,7 +883,8 @@ namespace MyGiftReg.Tests.Integration
 
             // Reserve the item
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+            var reserverUserDisplayName = "Reserver User";
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId, reserverUserDisplayName);
 
             // Act - Another user views the list
             var viewerUserId = "vieweruser";
@@ -890,6 +893,7 @@ namespace MyGiftReg.Tests.Integration
             // Assert - Others should see reservation status
             Assert.Single(result);
             Assert.Equal(reserverUserId, result[0].ReservedBy);
+            Assert.Equal(reserverUserDisplayName, result[0].ReservedByDisplayName);
         }
 
         [Fact]
@@ -902,7 +906,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -914,7 +918,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Another user reserves the item
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId, "Test User");
 
             // Act - Owner views the specific item
             var result = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), ownerUserId);
@@ -922,6 +926,7 @@ namespace MyGiftReg.Tests.Integration
             // Assert - Owner should not see reservation status
             Assert.NotNull(result);
             Assert.Null(result.ReservedBy);
+            Assert.Null(result.ReservedByDisplayName);
         }
 
         [Fact]
@@ -934,7 +939,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(giftListRequest, ownerUserId, "Test User");
 
             var itemRequest = new CreateGiftItemRequest
             {
@@ -946,7 +951,8 @@ namespace MyGiftReg.Tests.Integration
 
             // Reserve the item
             var reserverUserId = "reserveruser";
-            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId);
+            var reserverUserDisplayName = "Reserver User";
+            await _giftItemService.ReserveGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), item.Id.ToString(), reserverUserId, reserverUserDisplayName);
 
             // Act - Another user views the specific item
             var viewerUserId = "vieweruser";
@@ -955,6 +961,7 @@ namespace MyGiftReg.Tests.Integration
             // Assert - Others should see reservation status
             Assert.NotNull(result);
             Assert.Equal(reserverUserId, result.ReservedBy);
+            Assert.Equal(reserverUserDisplayName, result.ReservedByDisplayName);
         }
     }
 }

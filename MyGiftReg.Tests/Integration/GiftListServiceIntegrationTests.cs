@@ -41,13 +41,14 @@ namespace MyGiftReg.Tests.Integration
             var userId = "serviceuser";
 
             // Act
-            var result = await _giftListService.CreateGiftListAsync(request, userId);
+            var result = await _giftListService.CreateGiftListAsync(request, userId, "Service User");
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(_testPrefix + "_Service Test Gift List", result.Name);
             Assert.Equal(_testPrefix + "_TestEvent", result.EventName);
             Assert.Equal(userId, result.Owner);
+            Assert.Equal("Service User", result.OwnerDisplayName);
             Assert.NotNull(result.CreatedDate);
 
             // Verify it's persisted
@@ -68,7 +69,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.CreateGiftListAsync(request, ""));
+                async () => await _giftListService.CreateGiftListAsync(request, "", "Test User"));
         }
 
         [Fact]
@@ -83,7 +84,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.CreateGiftListAsync(request, null!));
+                async () => await _giftListService.CreateGiftListAsync(request, null!, "Test User"));
         }
 
         [Fact]
@@ -99,7 +100,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.CreateGiftListAsync(request, userId));
+                async () => await _giftListService.CreateGiftListAsync(request, userId, "Test User"));
         }
 
         [Fact]
@@ -112,7 +113,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, userId);
+            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, userId, "Test User");
 
             // Act
             var result = await _giftListService.GetGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString());
@@ -122,6 +123,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(_testPrefix + "_Get Service Test Gift List", result.Name);
             Assert.Equal(_testPrefix + "_TestEvent", result.EventName);
             Assert.Equal(userId, result.Owner);
+            Assert.Equal("Test User", result.OwnerDisplayName);
         }
 
         [Fact]
@@ -160,7 +162,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "originaluser";
-            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, userId);
+            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, userId, "Test User");
 
             var updateRequest = new CreateGiftListRequest
             {
@@ -177,6 +179,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(_testPrefix + "_Updated Service Test Gift List", result.Name);
             Assert.Equal(_testPrefix + "_TestEvent", result.EventName);
             Assert.Equal(userId, result.Owner); // Owner should remain original
+            Assert.Equal("Test User", result.OwnerDisplayName); // Owner display name should remain original
 
             // Verify update persisted
             var retrieved = await _giftListService.GetGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString());
@@ -211,7 +214,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId);
+            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId, "Test User");
 
             var updateRequest = new CreateGiftListRequest
             {
@@ -266,7 +269,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var createdGiftList = await _giftListService.CreateGiftListAsync(request, userId);
+            var createdGiftList = await _giftListService.CreateGiftListAsync(request, userId, "Test User");
 
             // Act
             var result = await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString(), userId);
@@ -299,7 +302,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var ownerUserId = "owneruser";
-            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId);
+            var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId, "Test User");
 
             var otherUserId = "otheruser";
 
@@ -337,7 +340,7 @@ namespace MyGiftReg.Tests.Integration
 
             foreach (var (request, userId) in requests)
             {
-                await _giftListService.CreateGiftListAsync(request, userId);
+                await _giftListService.CreateGiftListAsync(request, userId, "Test User");
             }
 
             // Act
@@ -381,7 +384,7 @@ namespace MyGiftReg.Tests.Integration
 
             foreach (var (request, userId) in requests)
             {
-                await _giftListService.CreateGiftListAsync(request, userId);
+                await _giftListService.CreateGiftListAsync(request, userId, "Test User");
             }
 
             // Act
@@ -417,7 +420,7 @@ namespace MyGiftReg.Tests.Integration
 
             foreach (var (request, userId) in requests)
             {
-                await _giftListService.CreateGiftListAsync(request, userId);
+                await _giftListService.CreateGiftListAsync(request, userId, "Test User");
             }
 
             // Act
@@ -446,7 +449,7 @@ namespace MyGiftReg.Tests.Integration
                 EventName = _testPrefix + "_TestEvent"
             };
             var userId = "testuser";
-            var serviceResult = await _giftListService.CreateGiftListAsync(serviceRequest, userId);
+            var serviceResult = await _giftListService.CreateGiftListAsync(serviceRequest, userId, "Test User");
 
             // Act - Retrieve via repository
             var repoResult = await _giftListRepository.GetAsync(_testPrefix + "_TestEvent", serviceResult.Id.ToString());
@@ -457,6 +460,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(serviceResult.Name, repoResult.Name);
             Assert.Equal(serviceResult.EventName, repoResult.EventName);
             Assert.Equal(serviceResult.Owner, repoResult.Owner);
+            Assert.Equal(serviceResult.OwnerDisplayName, repoResult.OwnerDisplayName);
             Assert.Equal(serviceResult.PartitionKey, repoResult.PartitionKey);
             Assert.Equal(serviceResult.RowKey, repoResult.RowKey);
         }
@@ -473,7 +477,7 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Owned Gift List",
                 EventName = _testPrefix + "_TestEvent"
             };
-            var giftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId, "Test User");
 
             var updateRequest = new CreateGiftListRequest
             {
@@ -498,7 +502,7 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Owned Gift List for Delete",
                 EventName = _testPrefix + "_TestEvent"
             };
-            var giftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId);
+            var giftList = await _giftListService.CreateGiftListAsync(createRequest, ownerUserId, "Test User");
 
             // Act & Assert - Other user cannot delete
             await Assert.ThrowsAsync<ValidationException>(

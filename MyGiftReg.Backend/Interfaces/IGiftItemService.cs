@@ -10,7 +10,7 @@ namespace MyGiftReg.Backend.Interfaces
         Task<GiftItem?> UpdateGiftItemAsync(string eventName, string giftListId, string itemId, CreateGiftItemRequest request, string userId);
         Task<bool> DeleteGiftItemAsync(string eventName, string giftListId, string itemId, string userId);
         Task<IList<GiftItem>> GetGiftItemsByListAsync(string eventName, string giftListId, string viewerUserId);
-        Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId);
+        Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId, string userDisplayName);
         Task<bool> UnreserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId);
     }
 }
