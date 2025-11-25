@@ -29,7 +29,7 @@ namespace MyGiftReg.Frontend.Controllers
             _logger = logger;
         }
 
-        // GET: /Events/{eventName}/GiftLists/{giftListId}/GiftItems?view=create, view=edit, view=reserve
+        // GET: /Events/{eventName}/GiftLists/{giftListId}/GiftItems?view=create, view=edit
         [HttpGet]
         public async Task<IActionResult> Index(string eventName, string giftListId, string? view, string? id)
         {
@@ -82,34 +82,6 @@ namespace MyGiftReg.Frontend.Controllers
                         
                         return View("Edit", giftItemEntity);
                     
-                    case "reserve":
-                        // Prevent owners from accessing reserve view
-                        if (isOwner)
-                        {
-                            return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
-                        }
-                        
-                        if (string.IsNullOrEmpty(id))
-                        {
-                            return NotFound();
-                        }
-                        
-                        var reserveItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, id, currentUserId);
-                        if (reserveItemEntity == null)
-                        {
-                            return NotFound();
-                        }
-
-                        ViewBag.EventName = eventName;
-                        ViewBag.GiftListId = giftListId;
-                        ViewBag.GiftItemId = id;
-                        ViewBag.GiftListName = giftListEntity.Name;
-                        ViewBag.CurrentUserId = currentUserId;
-                        ViewBag.IsOwner = isOwner;
-                        ViewBag.ReservedByDisplayName = reserveItemEntity.ReservedByDisplayName;
-                        
-                        return View("Reserve", reserveItemEntity);
-                    
                     default:
                         // Redirect to gift list details if no valid view specified
                         return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
@@ -128,11 +100,6 @@ namespace MyGiftReg.Frontend.Controllers
                 {
                     ViewBag.ErrorMessage = "An error occurred while loading the gift item for editing.";
                     return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
-                }
-                else if (view == "reserve")
-                {
-                    ViewBag.ErrorMessage = "An error occurred while loading the gift item for reservation.";
-                    return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
                 }
                 else
                 {
@@ -236,51 +203,6 @@ namespace MyGiftReg.Frontend.Controllers
             }
         }
 
-        // GET: /Events/{eventName}/GiftLists/{giftListId}/GiftItems/{giftItemGUID} (clean path-based URL for gift item details)
-        [HttpGet("{itemId}")]
-        public async Task<IActionResult> Details(string eventName, string giftListId, string itemId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(eventName) || string.IsNullOrEmpty(giftListId) || string.IsNullOrEmpty(itemId))
-                {
-                    return NotFound();
-                }
-
-                var giftItemEntity = await _giftItemService.GetGiftItemAsync(eventName, giftListId, itemId, _azureUserService.GetCurrentUserId());
-                if (giftItemEntity == null)
-                {
-                    return NotFound();
-                }
-
-                // Verify the gift list exists
-                var giftListEntity = await _giftListService.GetGiftListAsync(eventName, giftListId);
-                if (giftListEntity == null)
-                {
-                    return NotFound();
-                }
-
-                var currentUserId = _azureUserService.GetCurrentUserId();
-                var isOwner = giftListEntity.Owner == currentUserId;
-
-                ViewBag.EventName = eventName;
-                ViewBag.GiftListId = giftListId;
-                ViewBag.GiftItemId = itemId;
-                ViewBag.GiftListName = giftListEntity.Name;
-                ViewBag.CurrentUserId = currentUserId;
-                ViewBag.IsOwner = isOwner;
-                ViewBag.ReservedByDisplayName = giftItemEntity.ReservedByDisplayName;
-
-                return View(giftItemEntity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting gift item details for {EventName}/{GiftListId}/{GiftItemId}", eventName, giftListId, itemId);
-                ViewBag.ErrorMessage = "An error occurred while loading gift item details. Please try again.";
-                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
-            }
-        }
-
         private async Task<IActionResult> HandleCreate(string eventName, string giftListId, CreateGiftItemRequest? request)
         {
             if (request == null)
@@ -294,7 +216,7 @@ namespace MyGiftReg.Frontend.Controllers
                 {
                     var currentUserId = _azureUserService.GetCurrentUserId();
                     var createdGiftItem = await _giftItemService.CreateGiftItemAsync(eventName, request, currentUserId);
-                    return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = giftListId, itemId = createdGiftItem!.Id.ToString() });
+                    return RedirectToAction("Details", "GiftLists", new { eventName = eventName, giftListId = giftListId });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
                 {
@@ -321,7 +243,7 @@ namespace MyGiftReg.Frontend.Controllers
                 {
                     var currentUserId = _azureUserService.GetCurrentUserId();
                     await _giftItemService.UpdateGiftItemAsync(eventName, giftListId, itemId, request, currentUserId);
-                    return RedirectToAction(nameof(Details), new { eventName, giftListId, itemId });
+                    return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
                 }
                 catch (MyGiftReg.Backend.Exceptions.NotFoundException)
                 {
@@ -362,7 +284,7 @@ namespace MyGiftReg.Frontend.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Details), new { eventName, giftListId, itemId });
+                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
         }
 
@@ -377,12 +299,12 @@ namespace MyGiftReg.Frontend.Controllers
                 }
 
                 await _giftItemService.ReserveGiftItemAsync(eventName, giftListId, itemId, currentUser.Id, currentUser.DisplayName);
-                return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
+                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reserving gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Index), new { eventName, giftListId, view = "reserve", id = itemId });
+                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
         }
 
@@ -392,12 +314,12 @@ namespace MyGiftReg.Frontend.Controllers
             {
                 var currentUserId = _azureUserService.GetCurrentUserId();
                 await _giftItemService.UnreserveGiftItemAsync(eventName, giftListId, itemId, currentUserId);
-                return RedirectToAction("Reserve", "GiftLists", new { eventName, giftListId });
+                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error unreserving gift item {GiftItemId} for gift list {GiftListId} in event {EventName}", itemId, giftListId, eventName);
-                return RedirectToAction(nameof(Index), new { eventName, giftListId, view = "reserve", id = itemId });
+                return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
             }
         }
     }

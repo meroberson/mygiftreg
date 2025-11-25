@@ -155,15 +155,6 @@
                                         </div>
                                         <div class="card-footer">
                                             <div class="btn-group w-100" role="group">
-                                                <a href="@Url.Action("Details", "GiftItems", new { 
-                                                    eventName = ViewBag.EventName, 
-                                                    giftListId = Model.Id, 
-                                                    itemId = item.Id 
-                                                })" 
-                                                   class="btn btn-outline-primary btn-sm">
-                                                    <i class="fas fa-eye"></i> View
-                                                </a>
-                                                
                                                 @if (ViewBag.IsOwner != null && ViewBag.IsOwner)
                                                 {
                                                     <a href="@Url.Action("Index", "GiftItems", new { 
@@ -178,27 +169,41 @@
                                                 }
                                                 else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && string.IsNullOrEmpty(item.ReservedBy))
                                                 {
-                                                    <a href="@Url.Action("Index", "GiftItems", new { 
-                                                        eventName = ViewBag.EventName, 
-                                                        giftListId = Model.Id, 
-                                                        view = "reserve", 
-                                                        id = item.Id 
-                                                    })" 
-                                                       class="btn btn-success btn-sm">
-                                                        <i class="fas fa-heart"></i> Reserve
-                                                    </a>
+                                                    <form method="post" 
+                                                          action="@Url.Action("Index", "GiftItems", new { 
+                                                              eventName = ViewBag.EventName, 
+                                                              giftListId = Model.Id,
+                                                              id = @item.Id
+                                                          })" 
+                                                          style="display: inline;">
+                                                        <input type="hidden" name="action" value="reserve" />
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                                            <i class="fas fa-heart"></i> Reserve
+                                                        </button>
+                                                    </form>
                                                 }
-                                                else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && !string.IsNullOrEmpty(item.ReservedBy))
+                                                else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && !string.IsNullOrEmpty(item.ReservedBy) && item.ReservedBy == ViewBag.CurrentUserId)
                                                 {
-                                                    <a href="@Url.Action("Index", "GiftItems", new { 
-                                                        eventName = ViewBag.EventName, 
-                                                        giftListId = Model.Id, 
-                                                        view = "reserve", 
-                                                        id = item.Id 
-                                                    })" 
-                                                       class="btn btn-warning btn-sm">
-                                                        <i class="fas fas-heart-broken"></i> Unreserve
-                                                    </a>
+                                                    <form method="post" 
+                                                          action="@Url.Action("Index", "GiftItems", new { 
+                                                              eventName = ViewBag.EventName, 
+                                                              giftListId = Model.Id,
+                                                              id = @item.Id
+                                                          })" 
+                                                          style="display: inline;">
+                                                        <input type="hidden" name="action" value="unreserve" />
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                                                            <i class="fas fa-heart-broken"></i> Unreserve
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else if (ViewBag.IsOwner != null && !ViewBag.IsOwner && !string.IsNullOrEmpty(item.ReservedBy) && item.ReservedBy != ViewBag.CurrentUserId)
+                                                {
+                                                    <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                                                        <i class="fas fa-lock"></i> Reserved
+                                                    </button>
                                                 }
                                             </div>
                                         </div>

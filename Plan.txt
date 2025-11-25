@@ -88,10 +88,9 @@ POST /Events : Create / delete / edit events
 GET /Events/{eventName} : Details view of an event, including the existing gift lists
 GET /Events/{eventName}/GiftLists : Same as previous
 POST /Events/{eventaName}/GiftLists : Create / delete / edit gift lists
-GET /Events/{eventaName}/GiftLists/{giftListGUID} : View a gift list
+GET /Events/{eventaName}/GiftLists/{giftListGUID} : View a gift list, including its items
 GET /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems : same as previous
 POST /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems : create / delete / edit / reserve gift items
-GET /Events/{eventaName}/GiftLists/{giftListGUID}/GiftItems/{giftItemGUID} : View a gift item
 
 The POST operations are done via forms.
 
