@@ -189,52 +189,6 @@ namespace MyGiftReg.Frontend.Controllers
             }
         }
 
-        // GET: /Events/{eventName}/GiftLists/{giftListGUID}/Reserve (reservation interface)
-        [HttpGet("{giftListId}/Reserve")]
-        public async Task<IActionResult> Reserve(string eventName, string giftListId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(eventName) || string.IsNullOrEmpty(giftListId))
-                {
-                    return NotFound();
-                }
-
-                var giftListEntity = await _giftListService.GetGiftListAsync(eventName, giftListId);
-                if (giftListEntity == null)
-                {
-                    return NotFound();
-                }
-
-                // Check if the current user owns this gift list
-                var currentUserId = _azureUserService.GetCurrentUserId();
-                var isOwner = giftListEntity.Owner == currentUserId;
-
-                // Prevent owners from accessing reservation interface
-                if (isOwner)
-                {
-                    return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = giftListId });
-                }
-
-                // Get gift items for reservation
-                var giftItems = await _giftItemService.GetGiftItemsByListAsync(eventName, giftListId, currentUserId);
-
-                ViewBag.EventName = eventName;
-                ViewBag.GiftListId = giftListId;
-                ViewBag.GiftItems = giftItems;
-                ViewBag.CurrentUserId = currentUserId;
-                ViewBag.OwnerDisplayName = giftListEntity.OwnerDisplayName;
-
-                return View(giftListEntity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading reservation page for {EventName}/{GiftListId}", eventName, giftListId);
-                ViewBag.ErrorMessage = "An error occurred while loading the reservation page. Please try again.";
-                return RedirectToAction(nameof(Details), new { eventName, giftListId });
-            }
-        }
-
         private async Task<IActionResult> HandleCreate(string eventName, CreateGiftListRequest? request)
         {
             if (request == null)
