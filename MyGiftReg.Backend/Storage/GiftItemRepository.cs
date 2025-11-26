@@ -12,12 +12,12 @@ namespace MyGiftReg.Backend.Storage
         {
         }
 
-        public async Task<GiftItem?> GetAsync(string giftListId, string itemId)
+        public new async Task<GiftItem?> GetAsync(string giftListId, string itemId)
         {
             return await base.GetAsync(giftListId, itemId);
         }
 
-        public async Task<GiftItem> CreateAsync(GiftItem giftItemEntity)
+        public new async Task<GiftItem> CreateAsync(GiftItem giftItemEntity)
         {
             giftItemEntity.PartitionKey = giftItemEntity.GiftListId.ToString();
             giftItemEntity.RowKey = giftItemEntity.Id.ToString();
@@ -51,7 +51,7 @@ namespace MyGiftReg.Backend.Storage
             return await UpdateAsync(giftItemEntity);
         }
 
-        public async Task<bool> DeleteAsync(string giftListId, string itemId)
+        public new async Task<bool> DeleteAsync(string giftListId, string itemId)
         {
             // Verify entity exists before deletion
             var existingGiftItem = await GetAsync(giftListId, itemId);

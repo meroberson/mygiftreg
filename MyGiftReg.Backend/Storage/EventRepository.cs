@@ -18,7 +18,7 @@ namespace MyGiftReg.Backend.Storage
             return await GetAsync("", eventName);
         }
 
-        public async Task<Event> CreateAsync(Event eventEntity)
+        public new async Task<Event> CreateAsync(Event eventEntity)
         {
             eventEntity.PartitionKey = "";
             eventEntity.RowKey = eventEntity.Name;
@@ -65,7 +65,7 @@ namespace MyGiftReg.Backend.Storage
             return true;
         }
 
-        public async Task<IList<Event>> GetAllAsync()
+        public new async Task<IList<Event>> GetAllAsync()
         {
             var allEvents = await base.GetAllAsync();
             return allEvents.Where(e => e.PartitionKey == "").ToList();

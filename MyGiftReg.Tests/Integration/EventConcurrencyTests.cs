@@ -153,7 +153,7 @@ namespace MyGiftReg.Tests.Integration
                 };
                 
                 var updatedEvent = await _eventService.UpdateEventAsync(name, updateRequest, userId);
-                finalDescription = updatedEvent.Description;
+                finalDescription = updatedEvent!.Description;
             }
 
             // Assert - At least one update should succeed

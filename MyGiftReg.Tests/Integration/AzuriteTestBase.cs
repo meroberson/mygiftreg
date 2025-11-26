@@ -56,9 +56,12 @@ namespace MyGiftReg.Tests.Integration
 
         public virtual async Task DisposeAsync()
         {
-            Logger?.LogInformation("Cleaning up test tables for {TestClass}", GetType().Name);
+            //Logger?.LogInformation("Cleaning up test tables for {TestClass}", GetType().Name);
             
             //await CleanupTablesAsync();
+
+            // Can't clean up the tables because they could be used by other tests still
+            await Task.CompletedTask;
             
             // Dispose host
             _host?.Dispose();
@@ -109,6 +112,7 @@ namespace MyGiftReg.Tests.Integration
             if (await IsAzuriteRunningAsync())
             {
                 Logger?.LogInformation("Azurite is already running");
+                await Task.CompletedTask;
                 return;
             }
 
@@ -143,6 +147,7 @@ namespace MyGiftReg.Tests.Integration
             if (await IsAzuriteRunningAsync())
             {
                 Logger?.LogInformation("Azurite is now running");
+                await Task.CompletedTask;
                 return;
             }
 

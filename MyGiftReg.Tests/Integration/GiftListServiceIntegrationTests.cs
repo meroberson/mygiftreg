@@ -49,7 +49,6 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(_testPrefix + "_TestEvent", result.EventName);
             Assert.Equal(userId, result.Owner);
             Assert.Equal("Service User", result.OwnerDisplayName);
-            Assert.NotNull(result.CreatedDate);
 
             // Verify it's persisted
             var retrieved = await _giftListService.GetGiftListAsync(_testPrefix + "_TestEvent", result.Id.ToString());
@@ -116,7 +115,7 @@ namespace MyGiftReg.Tests.Integration
             var createdGiftList = await _giftListService.CreateGiftListAsync(createRequest, userId, "Test User");
 
             // Act
-            var result = await _giftListService.GetGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString());
+            var result = await _giftListService.GetGiftListAsync(_testPrefix + "_TestEvent", createdGiftList!.Id.ToString());
 
             // Assert
             Assert.NotNull(result);
@@ -172,7 +171,7 @@ namespace MyGiftReg.Tests.Integration
             var updateUserId = "originaluser";
 
             // Act
-            var result = await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString(), updateRequest, updateUserId);
+            var result = await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", createdGiftList!.Id.ToString(), updateRequest, updateUserId);
 
             // Assert
             Assert.NotNull(result);
@@ -225,7 +224,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString(), updateRequest, otherUserId));
+                async () => await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", createdGiftList!.Id.ToString(), updateRequest, otherUserId));
         }
 
         [Fact]
@@ -272,7 +271,7 @@ namespace MyGiftReg.Tests.Integration
             var createdGiftList = await _giftListService.CreateGiftListAsync(request, userId, "Test User");
 
             // Act
-            var result = await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString(), userId);
+            var result = await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", createdGiftList!.Id.ToString(), userId);
 
             // Assert
             Assert.True(result);
@@ -308,7 +307,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", createdGiftList.Id.ToString(), otherUserId));
+                async () => await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", createdGiftList!.Id.ToString(), otherUserId));
         }
 
         [Fact]
@@ -452,7 +451,7 @@ namespace MyGiftReg.Tests.Integration
             var serviceResult = await _giftListService.CreateGiftListAsync(serviceRequest, userId, "Test User");
 
             // Act - Retrieve via repository
-            var repoResult = await _giftListRepository.GetAsync(_testPrefix + "_TestEvent", serviceResult.Id.ToString());
+            var repoResult = await _giftListRepository.GetAsync(_testPrefix + "_TestEvent", serviceResult!.Id.ToString());
 
             // Assert
             Assert.NotNull(serviceResult);
@@ -487,7 +486,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert - Other user cannot update
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), updateRequest, otherUserId));
+                async () => await _giftListService.UpdateGiftListAsync(_testPrefix + "_TestEvent", giftList!.Id.ToString(), updateRequest, otherUserId));
         }
 
         [Fact]
@@ -506,7 +505,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Act & Assert - Other user cannot delete
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), otherUserId));
+                async () => await _giftListService.DeleteGiftListAsync(_testPrefix + "_TestEvent", giftList!.Id.ToString(), otherUserId));
         }
     }
 }
