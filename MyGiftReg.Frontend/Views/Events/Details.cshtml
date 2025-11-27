@@ -50,7 +50,7 @@
                             <h5 class="card-title"><i class="fas fa-info-circle"></i> Event Details</h5>
                             <dl class="row">
                                 <dt class="col-sm-4">Created By:</dt>
-                                <dd class="col-sm-8">@Model.CreatedBy</dd>
+                                <dd class="col-sm-8">@Model.CreatedByDisplayName</dd>
                                 <dt class="col-sm-4">Created Date:</dt>
                                 <dd class="col-sm-8">@Model.CreatedDate.ToString("MMMM dd, yyyy 'at' h:mm tt")</dd>
                                 @if (Model.EventDate.HasValue)

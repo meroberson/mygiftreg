@@ -174,7 +174,8 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             };
 
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123")).ReturnsAsync(createdEvent);
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123", "Test User")).ReturnsAsync(createdEvent);
 
             // Act
             var result = await _controller.Index("create", null, createRequest);
@@ -222,7 +223,8 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             var validationException = new MyGiftReg.Backend.Exceptions.ValidationException("Event name already exists");
             
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123"))
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123", "Test User"))
                            .ThrowsAsync(validationException);
 
             // Act
@@ -250,6 +252,7 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             };
 
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
 
             // Act
             var result = await _controller.Index("edit", eventName, editRequest);
@@ -259,7 +262,7 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             Assert.Equal("Details", redirectResult.ActionName);
             Assert.Equal(eventName, redirectResult.RouteValues!["eventName"]);
             
-            _mockEventService.Verify(s => s.UpdateEventAsync(eventName, editRequest, "user123"), Times.Once);
+            _mockEventService.Verify(s => s.UpdateEventAsync(eventName, editRequest, "user123", "Test User"), Times.Once);
         }
 
         [Fact]
@@ -277,7 +280,8 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             var notFoundException = new MyGiftReg.Backend.Exceptions.NotFoundException("Event not found");
             
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockEventService.Setup(s => s.UpdateEventAsync(eventName, editRequest, "user123"))
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+            _mockEventService.Setup(s => s.UpdateEventAsync(eventName, editRequest, "user123", "Test User"))
                            .ThrowsAsync(notFoundException);
 
             // Act
@@ -309,7 +313,8 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             var validationException = new MyGiftReg.Backend.Exceptions.ValidationException("Description too short");
             
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockEventService.Setup(s => s.UpdateEventAsync(eventName, editRequest, "user123"))
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+            _mockEventService.Setup(s => s.UpdateEventAsync(eventName, editRequest, "user123", "Test User"))
                            .ThrowsAsync(validationException);
             _mockEventService.Setup(s => s.GetEventAsync(eventName)).ReturnsAsync(originalEvent);
 
@@ -481,7 +486,8 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             };
 
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123"))
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+            _mockEventService.Setup(s => s.CreateEventAsync(It.IsAny<CreateEventRequest>(), "user123", "Test User"))
                            .ThrowsAsync(new Exception("Database error"));
 
             // Act
@@ -501,6 +507,7 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             var eventName = "Birthday";
             
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
+            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
             _mockEventService.Setup(s => s.DeleteEventAsync(eventName, "user123"))
                            .ThrowsAsync(new Exception("Database error"));
 

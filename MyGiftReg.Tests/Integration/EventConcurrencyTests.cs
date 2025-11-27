@@ -36,9 +36,10 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Initial Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act - Create event
-            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId);
+            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
             Assert.NotNull(createdEvent);
             var originalETag = createdEvent.ETag;
 
@@ -49,7 +50,7 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Updated Description"
             };
 
-            var updatedEvent = await _eventService.UpdateEventAsync(_testPrefix + "_ETag Test Event", updateRequest, userId);
+            var updatedEvent = await _eventService.UpdateEventAsync(_testPrefix + "_ETag Test Event", updateRequest, userId, userDisplayName);
             Assert.NotNull(updatedEvent);
 
             // Assert - ETag should have changed
@@ -72,7 +73,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Multi-read Test"
             };
             var userId = "testuser";
-            await _eventService.CreateEventAsync(createRequest, userId);
+            var userDisplayName = "Test User";
+            await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
 
             // Act - Multiple concurrent reads
             var tasks = new List<Task<Event?>>();
@@ -105,9 +107,10 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Testing concurrent operations"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act
-            var createTask = _eventService.CreateEventAsync(createRequest, userId);
+            var createTask = _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
             var readTask = _eventService.GetEventAsync(name);
 
             await Task.WhenAll(createTask, readTask);
@@ -140,7 +143,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Original Description"
             };
             var userId = "testuser";
-            await _eventService.CreateEventAsync(createRequest, userId);
+            var userDisplayName = "Test User";
+            await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
 
             // Act - Sequential updates to avoid ETag conflicts (more realistic scenario)
             var finalDescription = "";
@@ -152,7 +156,7 @@ namespace MyGiftReg.Tests.Integration
                     Description = $"Update {i + 1}"
                 };
                 
-                var updatedEvent = await _eventService.UpdateEventAsync(name, updateRequest, userId);
+                var updatedEvent = await _eventService.UpdateEventAsync(name, updateRequest, userId, userDisplayName);
                 finalDescription = updatedEvent!.Description;
             }
 
@@ -175,7 +179,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Will be deleted"
             };
             var userId = "testuser";
-            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId);
+            var userDisplayName = "Test User";
+            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
             Assert.NotNull(createdEvent);
 
             // Act - Concurrent read and delete
@@ -211,9 +216,10 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Testing ETag format"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act
-            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId);
+            var createdEvent = await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
 
             // Assert - ETag should be valid (Azurite format may vary)
             Assert.NotNull(createdEvent);
@@ -243,7 +249,7 @@ namespace MyGiftReg.Tests.Integration
             foreach (var (name, description) in events)
             {
                 var request = new CreateEventRequest { Name = name, Description = description };
-                var created = await _eventService.CreateEventAsync(request, "testuser");
+                var created = await _eventService.CreateEventAsync(request, "testuser", "Test User");
                 createdEvents.Add(created!);
             }
 
@@ -260,7 +266,7 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Entity 2",
                 Description = "Updated Description 2"
             };
-            var updatedEvent = await _eventService.UpdateEventAsync(_testPrefix + "_Entity 2", updateRequest, "testuser");
+            var updatedEvent = await _eventService.UpdateEventAsync(_testPrefix + "_Entity 2", updateRequest, "testuser", "Test User");
             Assert.NotNull(updatedEvent);
 
             // Assert - Entity 2's ETag should change

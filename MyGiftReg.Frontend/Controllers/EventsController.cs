@@ -194,7 +194,8 @@ namespace MyGiftReg.Frontend.Controllers
                 try
                 {
                     var currentUserId = _azureUserService.GetCurrentUserId();
-                    var createdEvent = await _eventService.CreateEventAsync(request, currentUserId);
+                    var currentUserDisplayName = _azureUserService.GetCurrentUserDisplayName();
+                    var createdEvent = await _eventService.CreateEventAsync(request, currentUserId, currentUserDisplayName);
                     return RedirectToAction(nameof(Details), new { eventName = createdEvent!.Name });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
@@ -218,7 +219,8 @@ namespace MyGiftReg.Frontend.Controllers
                 try
                 {
                     var currentUserId = _azureUserService.GetCurrentUserId();
-                    await _eventService.UpdateEventAsync(eventName, request, currentUserId);
+                    var currentUserDisplayName = _azureUserService.GetCurrentUserDisplayName();
+                    await _eventService.UpdateEventAsync(eventName, request, currentUserId, currentUserDisplayName);
                     return RedirectToAction(nameof(Details), new { eventName = eventName });
                 }
                 catch (MyGiftReg.Backend.Exceptions.NotFoundException)

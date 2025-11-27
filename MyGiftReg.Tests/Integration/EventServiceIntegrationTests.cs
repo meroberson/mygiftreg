@@ -40,9 +40,10 @@ namespace MyGiftReg.Tests.Integration
                 EventDate = DateTime.Today.AddDays(60)
             };
             var userId = "serviceuser";
+            var userDisplayName = "Service Test User";
 
             // Act
-            var result = await _eventService.CreateEventAsync(request, userId);
+            var result = await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Assert
             Assert.NotNull(result);
@@ -67,9 +68,10 @@ namespace MyGiftReg.Tests.Integration
                 Description = "First Description"
             };
             var userId = "user1";
+            var userDisplayName = "User One";
 
             // Act & Assert - First creation should succeed
-            var firstResult = await _eventService.CreateEventAsync(request, userId);
+            var firstResult = await _eventService.CreateEventAsync(request, userId, userDisplayName);
             Assert.NotNull(firstResult);
 
             // Second creation should throw exception
@@ -79,9 +81,10 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Second Description"
             };
             var userId2 = "user2";
+            var userDisplayName2 = "User Two";
 
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.CreateEventAsync(duplicateRequest, userId2));
+                async () => await _eventService.CreateEventAsync(duplicateRequest, userId2, userDisplayName2));
         }
 
         [Fact]
@@ -93,10 +96,11 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Empty User Test Event",
                 Description = "Test"
             };
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.CreateEventAsync(request, ""));
+                async () => await _eventService.CreateEventAsync(request, "", userDisplayName));
         }
 
         [Fact]
@@ -108,10 +112,11 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Null User Test Event",
                 Description = "Test"
             };
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.CreateEventAsync(request, null!));
+                async () => await _eventService.CreateEventAsync(request, null!, userDisplayName));
         }
 
         [Fact]
@@ -124,10 +129,11 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.CreateEventAsync(request, userId));
+                async () => await _eventService.CreateEventAsync(request, userId, userDisplayName));
         }
 
         [Fact]
@@ -140,8 +146,9 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Get Service Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
-            await _eventService.CreateEventAsync(request, userId);
+            await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Act
             var result = await _eventService.GetEventAsync(_testPrefix + "_Get Service Test Event");
@@ -181,7 +188,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Original Service Description"
             };
             var userId = "originaluser";
-            await _eventService.CreateEventAsync(createRequest, userId);
+            var userDisplayName = "Original User";
+            await _eventService.CreateEventAsync(createRequest, userId, userDisplayName);
 
             var updateRequest = new CreateEventRequest
             {
@@ -190,9 +198,10 @@ namespace MyGiftReg.Tests.Integration
                 EventDate = DateTime.Today.AddDays(90)
             };
             var updateUserId = "updateuser";
+            var updateUserDisplayName = "Update User";
 
             // Act
-            var result = await _eventService.UpdateEventAsync(_testPrefix + "_Update Service Test Event", updateRequest, updateUserId);
+            var result = await _eventService.UpdateEventAsync(_testPrefix + "_Update Service Test Event", updateRequest, updateUserId, updateUserDisplayName);
 
             // Assert
             Assert.NotNull(result);
@@ -216,10 +225,11 @@ namespace MyGiftReg.Tests.Integration
                 Description = "This doesn't exist"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<NotFoundException>(
-                async () => await _eventService.UpdateEventAsync(_testPrefix + "_Non Existent Service Event", request, userId));
+                async () => await _eventService.UpdateEventAsync(_testPrefix + "_Non Existent Service Event", request, userId, userDisplayName));
         }
 
         [Fact]
@@ -232,10 +242,11 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Test"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.UpdateEventAsync("", request, userId));
+                async () => await _eventService.UpdateEventAsync("", request, userId, userDisplayName));
         }
 
         [Fact]
@@ -247,10 +258,11 @@ namespace MyGiftReg.Tests.Integration
                 Name = _testPrefix + "_Test Event",
                 Description = "Test"
             };
+            var userDisplayName = "Test User";
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                async () => await _eventService.UpdateEventAsync(_testPrefix + "_Test Event", request, ""));
+                async () => await _eventService.UpdateEventAsync(_testPrefix + "_Test Event", request, "", userDisplayName));
         }
 
         [Fact]
@@ -263,7 +275,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Will be deleted"
             };
             var userId = "testuser";
-            await _eventService.CreateEventAsync(request, userId);
+            var userDisplayName = "Test User";
+            await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Act
             var result = await _eventService.DeleteEventAsync(_testPrefix + "_Delete Service Test Event", userId);
@@ -306,16 +319,16 @@ namespace MyGiftReg.Tests.Integration
         public async Task GetAllEventsAsync_MultipleEvents_ReturnsAllEvents()
         {
             // Arrange
-            var requests = new List<(CreateEventRequest request, string userId)>
+            var requests = new List<(CreateEventRequest request, string userId, string userDisplayName)>
             {
-                (new CreateEventRequest { Name = _testPrefix + "_Service Event 1", Description = "Description 1" }, "user1"),
-                (new CreateEventRequest { Name = _testPrefix + "_Service Event 2", Description = "Description 2" }, "user2"),
-                (new CreateEventRequest { Name = _testPrefix + "_Service Event 3", Description = "Description 3" }, "user3")
+                (new CreateEventRequest { Name = _testPrefix + "_Service Event 1", Description = "Description 1" }, "user1", "User One"),
+                (new CreateEventRequest { Name = _testPrefix + "_Service Event 2", Description = "Description 2" }, "user2", "User Two"),
+                (new CreateEventRequest { Name = _testPrefix + "_Service Event 3", Description = "Description 3" }, "user3", "User Three")
             };
 
-            foreach (var (request, userId) in requests)
+            foreach (var (request, userId, userDisplayName) in requests)
             {
-                await _eventService.CreateEventAsync(request, userId);
+                await _eventService.CreateEventAsync(request, userId, userDisplayName);
             }
 
             // Act
@@ -354,9 +367,10 @@ namespace MyGiftReg.Tests.Integration
                 EventDate = null
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act
-            var result = await _eventService.CreateEventAsync(request, userId);
+            var result = await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Assert
             Assert.NotNull(result);
@@ -374,7 +388,8 @@ namespace MyGiftReg.Tests.Integration
                 Description = "Testing service-repository consistency"
             };
             var userId = "testuser";
-            var serviceResult = await _eventService.CreateEventAsync(serviceRequest, userId);
+            var userDisplayName = "Test User";
+            var serviceResult = await _eventService.CreateEventAsync(serviceRequest, userId, userDisplayName);
 
             // Act - Retrieve via repository
             var repoResult = await _eventRepository.GetAsync(_testPrefix + "_Consistency Test Event");

@@ -10,6 +10,7 @@ namespace MyGiftReg.Frontend.Services
     {
         AzureUser? GetCurrentUser();
         string GetCurrentUserId();
+        string GetCurrentUserDisplayName();
         bool IsAuthenticated();
         bool HasRequiredRole();
     }
@@ -81,6 +82,12 @@ namespace MyGiftReg.Frontend.Services
         {
             var currentUser = GetCurrentUser();
             return currentUser?.Id ?? string.Empty;
+        }
+
+        public string GetCurrentUserDisplayName()
+        {
+            var currentUser = GetCurrentUser();
+            return currentUser?.DisplayName ?? string.Empty;
         }
 
         public bool IsAuthenticated()

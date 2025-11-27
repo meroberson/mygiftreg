@@ -29,6 +29,7 @@ namespace MyGiftReg.Tests.Services
                 EventDate = DateTime.Today
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
             
             var expectedEvent = new Event
             {
@@ -36,6 +37,7 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description",
                 EventDate = DateTime.Today,
                 CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -45,13 +47,14 @@ namespace MyGiftReg.Tests.Services
                 .ReturnsAsync(expectedEvent);
 
             // Act
-            var result = await _eventService.CreateEventAsync(request, userId);
+            var result = await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(request.Name, result.Name);
             Assert.Equal(request.Description, result.Description);
             Assert.Equal(userId, result.CreatedBy);
+            Assert.Equal(userDisplayName, result.CreatedByDisplayName);
             
             _mockEventRepository.Verify(repo => repo.GetAsync(request.Name), Times.Once);
             _mockEventRepository.Verify(repo => repo.CreateAsync(It.IsAny<Event>()), Times.Once);
@@ -67,6 +70,7 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
             
             var existingEvent = new Event { Name = "Existing Event" };
             _mockEventRepository.Setup(repo => repo.GetAsync(request.Name))
@@ -74,7 +78,7 @@ namespace MyGiftReg.Tests.Services
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("already exists", exception.Message);
         }
@@ -89,10 +93,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("User ID cannot be null or empty", exception.Message);
         }
@@ -114,12 +119,14 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             var expectedEvent = new Event
             {
                 Name = validEventName,
                 Description = "Test Description",
                 CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -129,7 +136,7 @@ namespace MyGiftReg.Tests.Services
                 .ReturnsAsync(expectedEvent);
 
             // Act
-            var result = await _eventService.CreateEventAsync(request, userId);
+            var result = await _eventService.CreateEventAsync(request, userId, userDisplayName);
 
             // Assert
             Assert.NotNull(result);
@@ -150,10 +157,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("cannot contain the character", exception.Message);
             Assert.Contains("not allowed in Azure Table Storage PartitionKey and RowKey", exception.Message);
@@ -170,10 +178,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("Event name cannot exceed 100 characters", exception.Message);
         }
@@ -189,10 +198,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("cannot contain control character", exception.Message);
             Assert.Contains("not allowed in Azure Table Storage PartitionKey and RowKey", exception.Message);
@@ -210,10 +220,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Test Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.CreateEventAsync(request, userId));
+                () => _eventService.CreateEventAsync(request, userId, userDisplayName));
             
             Assert.Contains("cannot start or end with whitespace characters", exception.Message);
         }
@@ -312,12 +323,14 @@ namespace MyGiftReg.Tests.Services
                 Description = "Updated Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
             
             var existingEvent = new Event 
             { 
                 Name = eventName,
                 Description = "Original Description",
                 CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
                 CreatedDate = DateTime.UtcNow
             };
             
@@ -326,6 +339,7 @@ namespace MyGiftReg.Tests.Services
                 Name = request.Name,
                 Description = request.Description,
                 CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
                 CreatedDate = existingEvent.CreatedDate
             };
 
@@ -335,7 +349,7 @@ namespace MyGiftReg.Tests.Services
                 .ReturnsAsync(updatedEvent);
 
             // Act
-            var result = await _eventService.UpdateEventAsync(eventName, request, userId);
+            var result = await _eventService.UpdateEventAsync(eventName, request, userId, userDisplayName);
 
             // Assert
             Assert.NotNull(result);
@@ -357,10 +371,11 @@ namespace MyGiftReg.Tests.Services
                 Description = "Updated Description"
             };
             var userId = "testuser";
+            var userDisplayName = "Test User";
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ValidationException>(
-                () => _eventService.UpdateEventAsync(eventName, request, userId));
+                () => _eventService.UpdateEventAsync(eventName, request, userId, userDisplayName));
             
             Assert.Contains("cannot contain the character", exception.Message);
         }
@@ -386,6 +401,77 @@ namespace MyGiftReg.Tests.Services
             Assert.Equal(2, result.Count);
             
             _mockEventRepository.Verify(repo => repo.GetAllAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateEventAsync_PopulatesCreatedByDisplayName()
+        {
+            // Arrange
+            var request = new CreateEventRequest { Name = "Test Event", Description = "Test" };
+            var userId = "testuser";
+            var userDisplayName = "John Smith";
+            
+            var expectedEvent = new Event
+            {
+                Name = "Test Event",
+                Description = "Test",
+                CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _mockEventRepository.Setup(repo => repo.GetAsync(request.Name))
+                .ReturnsAsync((Event?)null);
+            _mockEventRepository.Setup(repo => repo.CreateAsync(It.IsAny<Event>()))
+                .ReturnsAsync(expectedEvent);
+
+            // Act
+            var result = await _eventService.CreateEventAsync(request, userId, userDisplayName);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(userDisplayName, result.CreatedByDisplayName);
+        }
+
+        [Fact]
+        public async Task UpdateEventAsync_PreservesOriginalCreatedByDisplayName()
+        {
+            // Arrange
+            var eventName = "Test Event";
+            var originalUserId = "originaluser";
+            var originalDisplayName = "Original User";
+            var request = new CreateEventRequest { Name = "Test Event", Description = "Updated" };
+            
+            var existingEvent = new Event 
+            { 
+                Name = eventName,
+                Description = "Original Description",
+                CreatedBy = originalUserId,
+                CreatedByDisplayName = originalDisplayName,
+                CreatedDate = DateTime.UtcNow
+            };
+            
+            var updatedEvent = new Event
+            {
+                Name = request.Name,
+                Description = request.Description,
+                CreatedBy = originalUserId,
+                CreatedByDisplayName = originalDisplayName,
+                CreatedDate = existingEvent.CreatedDate
+            };
+
+            _mockEventRepository.Setup(repo => repo.GetAsync(eventName))
+                .ReturnsAsync(existingEvent);
+            _mockEventRepository.Setup(repo => repo.UpdateAsync(eventName, It.IsAny<Event>()))
+                .ReturnsAsync(updatedEvent);
+
+            // Act
+            var result = await _eventService.UpdateEventAsync(eventName, request, "updateuser", "Update User");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(originalDisplayName, result.CreatedByDisplayName);
+            Assert.Equal(originalUserId, result.CreatedBy); // CreatedBy should remain original
         }
     }
 }

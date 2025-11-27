@@ -16,11 +16,16 @@ namespace MyGiftReg.Backend.Services
             _eventRepository = eventRepository;
         }
 
-        public async Task<Event?> CreateEventAsync(CreateEventRequest request, string userId)
+        public async Task<Event?> CreateEventAsync(CreateEventRequest request, string userId, string userDisplayName)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userDisplayName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("User display name cannot be null or empty.");
             }
 
             // Validate the request
@@ -43,6 +48,7 @@ namespace MyGiftReg.Backend.Services
                 Description = request.Description,
                 EventDate = request.EventDate?.ToUniversalTime(),
                 CreatedBy = userId,
+                CreatedByDisplayName = userDisplayName,
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -69,7 +75,7 @@ namespace MyGiftReg.Backend.Services
             return await _eventRepository.GetAsync(eventName);
         }
 
-        public async Task<Event?> UpdateEventAsync(string eventName, CreateEventRequest request, string userId)
+        public async Task<Event?> UpdateEventAsync(string eventName, CreateEventRequest request, string userId, string userDisplayName)
         {
             if (string.IsNullOrWhiteSpace(eventName))
             {
@@ -84,6 +90,11 @@ namespace MyGiftReg.Backend.Services
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userDisplayName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("User display name cannot be null or empty.");
             }
 
             // Validate the request
@@ -119,6 +130,7 @@ namespace MyGiftReg.Backend.Services
                 Description = request.Description,
                 EventDate = request.EventDate?.ToUniversalTime(),
                 CreatedBy = existingEvent.CreatedBy,
+                CreatedByDisplayName = existingEvent.CreatedByDisplayName,
                 CreatedDate = existingEvent.CreatedDate
             };
 

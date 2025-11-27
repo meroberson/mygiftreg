@@ -17,5 +17,6 @@ namespace MyGiftReg.Backend.Models
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? EventDate { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
+        public string CreatedByDisplayName { get; set; } = string.Empty;
     }
 }
