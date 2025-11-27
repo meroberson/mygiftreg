@@ -7,7 +7,7 @@ namespace MyGiftReg.Frontend.Authorization
     {
         public RoleAuthorizationRequirement(string requiredRole)
         {
-            RequiredRole = requiredRole;
+            RequiredRole = requiredRole ?? throw new ArgumentNullException(nameof(requiredRole));
         }
 
         public string RequiredRole { get; }

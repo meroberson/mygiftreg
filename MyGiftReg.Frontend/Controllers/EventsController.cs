@@ -195,7 +195,7 @@ namespace MyGiftReg.Frontend.Controllers
                 {
                     var currentUserId = _azureUserService.GetCurrentUserId();
                     var createdEvent = await _eventService.CreateEventAsync(request, currentUserId);
-                    return RedirectToAction(nameof(Details), new { eventName = createdEvent.Name });
+                    return RedirectToAction(nameof(Details), new { eventName = createdEvent!.Name });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
                 {

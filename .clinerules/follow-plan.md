@@ -5,3 +5,5 @@ Before starting a new task, read Plan.txt. This will help in the following ways:
 * If the task appears to contradict the design, you can raise this to the user's attention and ask for a decision.
 
 Before completing a task, run the tests in the project and ensure they pass. The tests already pass, so if they do not pass then they were regressed, and the regression must be fixed before the task can be completed.
+
+All warnings in the solution must be resolved before a task is considered complete.

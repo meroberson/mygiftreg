@@ -81,12 +81,12 @@ namespace MyGiftReg.Frontend.Controllers
                 }
                 else if (view == "edit")
                 {
-                    ViewBag.ErrorMessage = "An error occurred while loading the gift list for editing.";
+                    TempData["ErrorMessage"] = "An error occurred while loading the gift list for editing.";
                     return RedirectToAction("Details", "Events", new { eventName });
                 }
                 else
                 {
-                    ViewBag.ErrorMessage = "An error occurred while loading gift lists. Please try again.";
+                    TempData["ErrorMessage"] = "An error occurred while loading gift lists. Please try again.";
                     return RedirectToAction("Details", "Events", new { eventName });
                 }
             }
@@ -184,7 +184,7 @@ namespace MyGiftReg.Frontend.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting gift list details for {EventName}/{GiftListId}", eventName, giftListId);
-                ViewBag.ErrorMessage = "An error occurred while loading gift list details. Please try again.";
+                TempData["ErrorMessage"] = "An error occurred while loading gift list details. Please try again.";
                 return RedirectToAction("Details", "Events", new { eventName });
             }
         }
@@ -208,7 +208,7 @@ namespace MyGiftReg.Frontend.Controllers
                     }
 
                     var createdGiftList = await _giftListService.CreateGiftListAsync(request, currentUser.Id, currentUser.DisplayName);
-                    return RedirectToAction(nameof(Details), new { eventName = eventName, giftListId = createdGiftList!.Id });
+                    return RedirectToAction("Details", "Events", new { eventName = eventName, giftListId = createdGiftList!.Id.ToString() });
                 }
                 catch (MyGiftReg.Backend.Exceptions.ValidationException ex)
                 {

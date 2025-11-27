@@ -93,16 +93,22 @@ namespace MyGiftReg.Frontend.Controllers
                 
                 if (view == "create")
                 {
+                    ViewBag.EventName = eventName;
+                    ViewBag.GiftListId = giftListId;
                     ViewBag.ErrorMessage = "An error occurred while loading the create gift item form.";
                     return View("Create", new CreateGiftItemRequest { GiftListId = giftListId });
                 }
                 else if (view == "edit")
                 {
+                    ViewBag.EventName = eventName;
+                    ViewBag.GiftListId = giftListId;
                     ViewBag.ErrorMessage = "An error occurred while loading the gift item for editing.";
                     return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
                 }
                 else
                 {
+                    ViewBag.EventName = eventName;
+                    ViewBag.GiftListId = giftListId;
                     ViewBag.ErrorMessage = "An error occurred while loading gift items. Please try again.";
                     return RedirectToAction("Details", "GiftLists", new { eventName, giftListId });
                 }
@@ -188,6 +194,10 @@ namespace MyGiftReg.Frontend.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling POST action {Action} with eventName {EventName}, giftListId {GiftListId} and id {Id}", action, eventName, giftListId, id);
+                
+                // Set ViewBag values for error view
+                ViewBag.EventName = eventName;
+                ViewBag.GiftListId = giftListId;
                 
                 // Handle different action types for error cases
                 if (action?.ToLower() == "create" || action?.ToLower() == "edit")

@@ -22,6 +22,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    
+    <!-- ASP.NET Core Dependencies -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyGiftReg.Backend\MyGiftReg.Backend.csproj" />
+    <ProjectReference Include="..\MyGiftReg.Frontend\MyGiftReg.Frontend.csproj" />
   </ItemGroup>
 
 </Project>
