@@ -46,10 +46,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<MyGiftReg.Backend.Storage.AzureTableConfig>();
 builder.Services.AddSingleton(sp => 
 {
-    var connectionString = builder.Configuration.GetConnectionString("AzureTableStorage") 
-                          ?? "UseDevelopmentStorage=true";
-    
-    return new TableServiceClient(connectionString);
+    var config = sp.GetRequiredService<MyGiftReg.Backend.Storage.AzureTableConfig>();
+    // Use the config to create a TableServiceClient that supports managed identity
+    return config.CreateTableServiceClient();
 });
 
 // Add backend services and dependency injection
@@ -71,7 +70,7 @@ await InitializeAzureTables(app.Services);
 static async Task InitializeAzureTables(IServiceProvider serviceProvider)
 {
     var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-    var tableServiceClient = serviceProvider.GetRequiredService<TableServiceClient>();
+    var config = serviceProvider.GetRequiredService<MyGiftReg.Backend.Storage.AzureTableConfig>();
     
     var requiredTables = new[] { "Events", "GiftLists", "GiftItems" };
     
@@ -79,7 +78,7 @@ static async Task InitializeAzureTables(IServiceProvider serviceProvider)
     {
         try
         {
-            var tableClient = tableServiceClient.GetTableClient(tableName);
+            var tableClient = config.CreateTableClient(tableName);
             await tableClient.CreateIfNotExistsAsync();
             logger.LogInformation("Table '{TableName}' is ready", tableName);
         }

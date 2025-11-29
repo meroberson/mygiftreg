@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Client;
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
 
 namespace MyGiftReg.Frontend.Services
 {
@@ -35,11 +36,13 @@ namespace MyGiftReg.Frontend.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<AzureUserService> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AzureUserService(IHttpContextAccessor httpContextAccessor, ILogger<AzureUserService> logger)
+        public AzureUserService(IHttpContextAccessor httpContextAccessor, ILogger<AzureUserService> logger, IConfiguration configuration)
         {
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public AzureUser? GetCurrentUser()
@@ -103,7 +106,7 @@ namespace MyGiftReg.Frontend.Services
                 return false;
             }
 
-            var requiredRole = "MyGiftReg.Access"; // This should come from configuration
+            var requiredRole = _configuration["AzureAd:RequiredRole"] ?? "MyGiftReg.Access";
             var userRoles = httpContext.User.Claims
                 .Where(c => c.Type == "roles" || c.Type == ClaimTypes.Role)
                 .Select(c => c.Value)

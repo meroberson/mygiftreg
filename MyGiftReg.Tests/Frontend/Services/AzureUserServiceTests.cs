@@ -6,6 +6,7 @@ using System.Security.Claims;
 using Moq;
 using Xunit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using MyGiftReg.Frontend.Services;
 
 namespace MyGiftReg.Tests.Frontend.Services
@@ -14,13 +15,19 @@ namespace MyGiftReg.Tests.Frontend.Services
     {
         private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
         private readonly Mock<ILogger<AzureUserService>> _mockLogger;
+        private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly AzureUserService _service;
 
         public AzureUserServiceTests()
         {
             _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
             _mockLogger = new Mock<ILogger<AzureUserService>>();
-            _service = new AzureUserService(_mockHttpContextAccessor.Object, _mockLogger.Object);
+            _mockConfiguration = new Mock<IConfiguration>();
+            
+            // Setup default configuration for tests using indexer syntax
+            _mockConfiguration.Setup(x => x["AzureAd:RequiredRole"]).Returns("MyGiftReg.Access");
+            
+            _service = new AzureUserService(_mockHttpContextAccessor.Object, _mockLogger.Object, _mockConfiguration.Object);
         }
 
         [Fact]

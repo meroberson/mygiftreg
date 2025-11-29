@@ -29,13 +29,35 @@
       "metadata": {
         "description": "Name of the Web App"
       }
+    },
+    "managedIdentityName": {
+      "type": "string",
+      "defaultValue": "mygiftreg-managed-identity",
+      "metadata": {
+        "description": "Name of the user-assigned managed identity"
+      }
+    },
+    "entraApplicationId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Entra application ID for granting access to managed identity"
+      }
     }
   },
   "variables": {
     "storageAccountType": "Standard_LRS",
-    "webAppRuntimeStack": "DOTNETCORE|8.0"
+    "webAppRuntimeStack": "DOTNETCORE|8.0",
+    "managedIdentityResourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]"
   },
   "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[parameters('managedIdentityName')]",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2023-01-01",
@@ -82,10 +104,14 @@
       "kind": "app",
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[variables('managedIdentityResourceId')]"
       ],
       "identity": {
-        "type": "SystemAssigned"
+        "type": "SystemAssigned, UserAssigned",
+        "userAssignedIdentities": {
+          "[variables('managedIdentityResourceId')]": {}
+        }
       },
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
@@ -102,6 +128,38 @@
         },
         "httpsOnly": true
       }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), variables('managedIdentityResourceId'), 'Storage Table Data Contributor')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[variables('managedIdentityResourceId')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-03183b0e4d49')]",
+        "principalId": "[reference(variables('managedIdentityResourceId'), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      }
+    },
+    {
+      "condition": "[not(empty(parameters('entraApplicationId')))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(parameters('entraApplicationId'), variables('managedIdentityResourceId'), 'MyGiftReg.Access')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('managedIdentityResourceId')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'a5b5a8a2-1f1e-4a4a-b8c3-9c4e5f6g7h8i')]",
+        "principalId": "[reference(variables('managedIdentityResourceId'), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "scope": "[resourceId('Microsoft.Graph/applications', parameters('entraApplicationId'))]"
+      }
     }
   ],
   "outputs": {
@@ -116,6 +174,10 @@
     "webAppUrl": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).defaultHostName]"
+    },
+    "managedIdentityClientId": {
+      "type": "string",
+      "value": "[reference(variables('managedIdentityResourceId'), '2023-01-31').clientId]"
     }
   }
 }
