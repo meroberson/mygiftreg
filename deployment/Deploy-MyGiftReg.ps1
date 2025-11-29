@@ -11,6 +11,9 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$AppName,
     
+    [Parameter(Mandatory=$true)]
+    [string]$AzureAdClientId,
+    
     [Parameter(Mandatory=$false)]
     [string]$BuildConfiguration = "Release",
     
@@ -102,7 +105,30 @@ catch {
     Write-Error-Step "Failed to authenticate to Azure: $_"
 }
 
-# Step 4: Clean previous build artifacts
+# Step 4: Discover Azure AD information
+Write-Step "Discovering Azure AD configuration..."
+try {
+    # Get tenant ID and domain from current context
+    $tenant = Get-AzTenant
+    $tenantId = $tenant.Id
+    $tenantDomain = $tenant.Domains[0]
+    
+    if (-not $tenantId) {
+        Write-Error-Step "Could not retrieve tenant ID from Azure context"
+    }
+    
+    if (-not $tenantDomain) {
+        Write-Error-Step "Could not retrieve tenant domain from Azure context"
+    }
+    
+    Write-ColorOutput "Discovered Tenant ID: $tenantId" "Green"
+    Write-ColorOutput "Discovered Tenant Domain: $tenantDomain" "Green"
+}
+catch {
+    Write-Error-Step "Failed to discover Azure AD configuration: $_"
+}
+
+# Step 5: Clean previous build artifacts
 Write-Step "Cleaning previous build artifacts..."
 try {
     $publishPath = "publish"
@@ -115,7 +141,7 @@ catch {
     Write-Error-Step "Failed to clean previous build artifacts: $_"
 }
 
-# Step 5: Restore NuGet packages and build in Release configuration
+# Step 6: Restore NuGet packages and build in Release configuration
 Write-Step "Building solution in $BuildConfiguration configuration..."
 try {
     & dotnet restore
@@ -134,7 +160,7 @@ catch {
     Write-Error-Step "Failed to build solution: $_"
 }
 
-# Step 6: Publish the frontend application
+# Step 7: Publish the frontend application
 Write-Step "Publishing frontend application..."
 try {
     $frontendProjectPath = "MyGiftReg.Frontend"
@@ -151,37 +177,7 @@ catch {
     Write-Error-Step "Failed to publish frontend application: $_"
 }
 
-# Step 7: Copy production appsettings to overwrite appsettings.json
-Write-Step "Copying production appsettings..."
-try {
-    $sourceSettings = $ProductionSettingsPath
-    $destinationSettings = "publish\frontend\appsettings.json"
-    
-    if (-not (Test-Path $sourceSettings)) {
-        Write-Error-Step "Production settings file not found: $sourceSettings"
-    }
-    
-    Copy-Item -Path $sourceSettings -Destination $destinationSettings -Force
-    Write-ColorOutput "Production appsettings copied successfully." "Green"
-}
-catch {
-    Write-Error-Step "Failed to copy production appsettings: $_"
-}
-
-# Step 8: Create zip file of published content
-Write-Step "Creating deployment zip file..."
-try {
-    $zipFileName = "${AppName}-deployment-$(Get-Date -Format 'yyyyMMdd-HHmmss').zip"
-    $zipFilePath = ".\$zipFileName"
-    
-    Compress-Archive -Path "publish\frontend\*" -DestinationPath $zipFilePath -Force
-    Write-ColorOutput "Deployment zip file created: $zipFilePath" "Green"
-}
-catch {
-    Write-Error-Step "Failed to create deployment zip file: $_"
-}
-
-# Step 9: Deploy ARM template
+# Step 8: Deploy ARM template
 Write-Step "Deploying ARM template..."
 try {
     # Read and parse ARM parameters
@@ -206,19 +202,79 @@ try {
     
     $deploymentName = "MyGiftReg-Deployment-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     
-    New-AzResourceGroupDeployment `
+    $deployment = New-AzResourceGroupDeployment `
         -ResourceGroupName $ResourceGroupName `
         -TemplateFile $ArmTemplatePath `
         -TemplateParameterObject $armParams `
         -Name $deploymentName
     
+    # Extract ARM deployment outputs
+    $storageAccountName = $deployment.Outputs.storageAccountName.Value
+    $managedIdentityClientId = $deployment.Outputs.managedIdentityClientId.Value
+    $webAppUrl = $deployment.Outputs.webAppUrl.Value
+    
     Write-ColorOutput "ARM template deployed successfully." "Green"
+    Write-ColorOutput "Storage Account: $storageAccountName" "Green"
+    Write-ColorOutput "Managed Identity Client ID: $managedIdentityClientId" "Green"
+    Write-ColorOutput "Web App URL: $webAppUrl" "Green"
 }
 catch {
     Write-Error-Step "Failed to deploy ARM template: $_"
 }
 
-# Step 10: Deploy web app
+# Step 9: Update production appsettings with discovered values
+Write-Step "Updating production appsettings..."
+try {
+    $sourceSettings = $ProductionSettingsPath
+    $destinationSettings = "publish\frontend\appsettings.json"
+    
+    if (-not (Test-Path $sourceSettings)) {
+        Write-Error-Step "Production settings file not found: $sourceSettings"
+    }
+    
+    # Read the production settings
+    $settingsContent = Get-Content $sourceSettings -Raw
+    $settings = $settingsContent | ConvertFrom-Json
+    
+    # Update Azure AD configuration with discovered values
+    $settings.AzureAd.Domain = $tenantDomain
+    $settings.AzureAd.TenantId = $tenantId
+    $settings.AzureAd.ClientId = $AzureAdClientId
+    $settings.AzureAd.ManagedIdentityClientId = $managedIdentityClientId
+    
+    # Update Managed Identity configuration
+    $settings.ManagedIdentity.StorageAccountEndpoint = "$storageAccountName.table.core.windows.net"
+    $settings.ManagedIdentity.ClientId = $managedIdentityClientId
+    
+    # Write updated settings to destination
+    $updatedSettings = $settings | ConvertTo-Json -Depth 10
+    Set-Content -Path $destinationSettings -Value $updatedSettings -Force
+    
+    Write-ColorOutput "Production appsettings updated successfully." "Green"
+    Write-ColorOutput "  - Domain: $tenantDomain" "White"
+    Write-ColorOutput "  - Tenant ID: $tenantId" "White"
+    Write-ColorOutput "  - Client ID: $AzureAdClientId" "White"
+    Write-ColorOutput "  - Managed Identity Client ID: $managedIdentityClientId" "White"
+    Write-ColorOutput "  - Storage Account: $storageAccountName" "White"
+}
+catch {
+    Write-Error-Step "Failed to update production appsettings: $_"
+}
+
+# Step 10: Create zip file of published content
+Write-Step "Creating deployment zip file..."
+try {
+    $zipFileName = "${AppName}-deployment-$(Get-Date -Format 'yyyyMMdd-HHmmss').zip"
+    $zipFilePath = ".\$zipFileName"
+    
+    Compress-Archive -Path "publish\frontend\*" -DestinationPath $zipFilePath -Force
+    Write-ColorOutput "Deployment zip file created: $zipFilePath" "Green"
+}
+catch {
+    Write-Error-Step "Failed to create deployment zip file: $_"
+}
+
+# Step 11: Deploy web app
 Write-Step "Deploying web application..."
 try {
     # Wait a moment for the web app to be fully provisioned
@@ -244,7 +300,7 @@ catch {
     Write-Error-Step "Failed to deploy web application: $_"
 }
 
-# Step 11: Final cleanup
+# Step 12: Final cleanup
 Write-Step "Cleaning up temporary files..."
 try {
     if (Test-Path "publish") {
@@ -262,7 +318,12 @@ Write-ColorOutput "- Resource Group: $ResourceGroupName" "White"
 Write-ColorOutput "- App Name: $AppName" "White"
 Write-ColorOutput "- Location: $Location" "White"
 Write-ColorOutput "- Build Configuration: $BuildConfiguration" "White"
+Write-ColorOutput "- Azure AD Domain: $tenantDomain.onmicrosoft.com" "White"
+Write-ColorOutput "- Azure AD Tenant ID: $tenantId" "White"
+Write-ColorOutput "- Azure AD Client ID: $AzureAdClientId" "White"
+Write-ColorOutput "- Managed Identity Client ID: $managedIdentityClientId" "White"
+Write-ColorOutput "- Storage Account Name: $storageAccountName" "White"
 Write-ColorOutput "- Deployment Zip: $zipFileName" "White"
 Write-ColorOutput "" "White"
 Write-ColorOutput "Your application should now be available at:" "Yellow"
-Write-ColorOutput "https://$AppName.azurewebsites.net" "Yellow"
+Write-ColorOutput "https://$webAppUrl" "Yellow"
