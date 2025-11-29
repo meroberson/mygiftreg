@@ -330,24 +330,6 @@ namespace MyGiftReg.Tests.Frontend.Controllers
         }
 
         [Fact]
-        public async Task Index_Post_Delete_WithValidEventName_DeletesEventAndRedirects()
-        {
-            // Arrange
-            var eventName = "Birthday";
-            
-            _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-
-            // Act
-            var result = await _controller.Index("delete", eventName, null);
-
-            // Assert
-            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal("Index", redirectResult.ActionName);
-            
-            _mockEventService.Verify(s => s.DeleteEventAsync(eventName, "user123"), Times.Once);
-        }
-
-        [Fact]
         public async Task Index_Post_WithMissingAction_ReturnsBadRequest()
         {
             // Arrange
@@ -402,17 +384,6 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Event name is required for edit action", badRequest.Value);
-        }
-
-        [Fact]
-        public async Task Index_Post_Delete_WithMissingId_ReturnsBadRequest()
-        {
-            // Act
-            var result = await _controller.Index("delete", null, null);
-
-            // Assert
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Event name is required for delete action", badRequest.Value);
         }
 
         // Error Handling Tests
@@ -500,19 +471,140 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             Assert.False(_controller.ModelState.IsValid);
         }
 
+        // Admin Role Tests
+
         [Fact]
-        public async Task Index_Post_Delete_WithException_ReturnsRedirectToIndex()
+        public async Task Index_Get_EditView_WithValidEventName_ForAdminUser_SetsIsAdminToTrue()
+        {
+            // Arrange
+            var eventName = "Birthday";
+            var eventEntity = new Event
+            {
+                Name = eventName,
+                Description = "John's birthday",
+                EventDate = DateTime.Now
+            };
+
+            // Set up admin role in claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "MyGiftReg.Access"),
+                new Claim(ClaimTypes.Role, "MyGiftReg.Admin")
+            };
+            _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+
+            _mockEventService.Setup(s => s.GetEventAsync(eventName)).ReturnsAsync(eventEntity);
+
+            // Act
+            var result = await _controller.Index("edit", eventName);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("Edit", viewResult.ViewName);
+            Assert.True((bool)_controller.ViewBag.IsAdmin);
+        }
+
+        [Fact]
+        public async Task Index_Get_EditView_WithValidEventName_ForNonAdminUser_SetsIsAdminToFalse()
+        {
+            // Arrange
+            var eventName = "Birthday";
+            var eventEntity = new Event
+            {
+                Name = eventName,
+                Description = "John's birthday",
+                EventDate = DateTime.Now
+            };
+
+            // Set up non-admin role in claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "MyGiftReg.Access")
+                // No admin role
+            };
+            _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContext
+            };
+
+            _mockEventService.Setup(s => s.GetEventAsync(eventName)).ReturnsAsync(eventEntity);
+
+            // Act
+            var result = await _controller.Index("edit", eventName);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("Edit", viewResult.ViewName);
+            Assert.False((bool)_controller.ViewBag.IsAdmin);
+        }
+
+        [Fact]
+        public async Task Delete_Post_WithValidEventName_AndAdminRole_DeletesEventAndRedirects()
         {
             // Arrange
             var eventName = "Birthday";
             
+            // Set up admin role in claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "MyGiftReg.Access"),
+                new Claim(ClaimTypes.Role, "MyGiftReg.Admin")
+            };
+            _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+            
             _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
-            _mockAzureUserService.Setup(s => s.GetCurrentUserDisplayName()).Returns("Test User");
+
+            // Act
+            var result = await _controller.Delete(eventName);
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", redirectResult.ActionName);
+            
+            _mockEventService.Verify(s => s.DeleteEventAsync(eventName, "user123"), Times.Once);
+        }
+
+        [Fact]
+        public async Task Delete_Post_WithMissingEventName_ReturnsBadRequest()
+        {
+            // Arrange
+            // Set up admin role in claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "MyGiftReg.Access"),
+                new Claim(ClaimTypes.Role, "MyGiftReg.Admin")
+            };
+            _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+
+            // Act
+            var result = await _controller.Delete(null);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Event name is required", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task Delete_Post_WithException_ReturnsRedirectToIndex()
+        {
+            // Arrange
+            var eventName = "Birthday";
+            
+            // Set up admin role in claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "MyGiftReg.Access"),
+                new Claim(ClaimTypes.Role, "MyGiftReg.Admin")
+            };
+            _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
+            
+            _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
             _mockEventService.Setup(s => s.DeleteEventAsync(eventName, "user123"))
                            .ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.Index("delete", eventName, null);
+            var result = await _controller.Delete(eventName);
 
             // Assert
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);

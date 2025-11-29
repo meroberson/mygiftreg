@@ -5,6 +5,7 @@ using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Frontend.Services;
 using MyGiftReg.Frontend.Authorization;
+using System.Security.Claims;
 
 namespace MyGiftReg.Frontend.Controllers
 {
@@ -49,6 +50,13 @@ namespace MyGiftReg.Frontend.Controllers
                             return NotFound();
                         }
 
+                        // Check if current user has admin role
+                        var userRoles = User.Claims
+                            .Where(c => c.Type == "roles" || c.Type == ClaimTypes.Role)
+                            .Select(c => c.Value)
+                            .ToList();
+                        var isAdmin = userRoles.Contains("MyGiftReg.Admin", StringComparer.OrdinalIgnoreCase);
+
                         var editRequest = new CreateEventRequest
                         {
                             Name = eventEntity.Name,
@@ -56,6 +64,7 @@ namespace MyGiftReg.Frontend.Controllers
                             EventDate = eventEntity.EventDate
                         };
 
+                        ViewBag.IsAdmin = isAdmin;
                         return View("Edit", editRequest);
                     
                     default:
@@ -86,7 +95,7 @@ namespace MyGiftReg.Frontend.Controllers
             }
         }
 
-        // POST: /Events (handles create, edit, delete actions)
+        // POST: /Events (handles create, edit actions)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(string? action, string? id, CreateEventRequest? request)
@@ -109,13 +118,6 @@ namespace MyGiftReg.Frontend.Controllers
                             return BadRequest("Event name is required for edit action");
                         }
                         return await HandleEdit(id, request);
-                    
-                    case "delete":
-                        if (string.IsNullOrEmpty(id))
-                        {
-                            return BadRequest("Event name is required for delete action");
-                        }
-                        return await HandleDelete(id);
                     
                     default:
                         return BadRequest($"Unknown action: {action}");
@@ -245,10 +247,19 @@ namespace MyGiftReg.Frontend.Controllers
             return View("Edit", request);
         }
 
-        private async Task<IActionResult> HandleDelete(string eventName)
+        // POST: /Events/Delete/{eventName} - Admin only delete endpoint
+        [HttpPost("{eventName}/delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "RequireAdminRole")]
+        public async Task<IActionResult> Delete(string eventName)
         {
             try
             {
+                if (string.IsNullOrEmpty(eventName))
+                {
+                    return BadRequest("Event name is required");
+                }
+
                 var currentUserId = _azureUserService.GetCurrentUserId();
                 await _eventService.DeleteEventAsync(eventName, currentUserId);
                 return RedirectToAction(nameof(Index));

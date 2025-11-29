@@ -21,6 +21,10 @@ builder.Services.AddAuthorization(options =>
     // Add policy for role-based access
     options.AddPolicy("RequireMyGiftRegRole", policy =>
         policy.Requirements.Add(new RoleAuthorizationRequirement("MyGiftReg.Access")));
+    
+    // Add policy for admin role - required for event deletion
+    options.AddPolicy("RequireAdminRole", policy =>
+        policy.Requirements.Add(new RoleAuthorizationRequirement("MyGiftReg.Admin")));
 });
 
 // Add the authorization handler
