@@ -13,6 +13,15 @@
     },
     "webAppName": {
       "value": "mygiftreg"
+    },
+    "managedIdentityName": {
+      "value": "mygiftreg-managed-identity"
+    },
+    "virtualNetworkName": {
+      "value": "mygiftreg-vnet"
+    },
+    "subnetName": {
+      "value": "mygiftreg-subnet"
     }
   }
 }

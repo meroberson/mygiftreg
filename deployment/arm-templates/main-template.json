@@ -36,12 +36,30 @@
       "metadata": {
         "description": "Name of the user-assigned managed identity"
       }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "mygiftreg-vnet",
+      "metadata": {
+        "description": "Name of the virtual network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "mygiftreg-subnet",
+      "metadata": {
+        "description": "Name of the subnet for App Service integration"
+      }
     }
   },
   "variables": {
     "storageAccountType": "Standard_LRS",
     "webAppRuntimeStack": "DOTNETCORE|8.0",
-    "managedIdentityResourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]"
+    "managedIdentityResourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]",
+    "virtualNetworkResourceId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+    "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]",
+    "addressPrefix": "10.0.0.0/16",
+    "subnetPrefix": "10.0.0.0/24"
   },
   "resources": [
     {
@@ -50,6 +68,43 @@
       "name": "[parameters('managedIdentityName')]",
       "location": "[parameters('location')]",
       "properties": {}
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[parameters('virtualNetworkName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetPrefix')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ],
+              "delegations": [
+                {
+                  "name": "delegation",
+                  "properties": {
+                    "serviceName": "Microsoft.Web/serverfarms"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[variables('managedIdentityResourceId')]"
+      ]
     },
     {
       "type": "Microsoft.Storage/storageAccounts",
@@ -61,7 +116,7 @@
       },
       "kind": "StorageV2",
       "dependsOn": [
-        "[variables('managedIdentityResourceId')]"
+        "[variables('virtualNetworkResourceId')]"
       ],
       "properties": {
         "supportsHttpsTrafficOnly": true,
@@ -69,9 +124,14 @@
         "allowBlobPublicAccess": false,
         "networkAcls": {
           "bypass": "AzureServices",
-          "virtualNetworkRules": [],
+          "virtualNetworkRules": [
+            {
+              "id": "[variables('subnetResourceId')]",
+              "action": "Allow"
+            }
+          ],
           "ipRules": [],
-          "defaultAction": "Allow"
+          "defaultAction": "Deny"
         }
       },
       "resources": [
@@ -118,7 +178,8 @@
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
-        "[variables('managedIdentityResourceId')]"
+        "[variables('managedIdentityResourceId')]",
+        "[variables('virtualNetworkResourceId')]"
       ],
       "identity": {
         "type": "UserAssigned",
@@ -137,9 +198,12 @@
           ],
           "httpLoggingEnabled": true,
           "detailedErrorLoggingEnabled": true,
-          "scmType": "None"
+          "scmType": "None",
+          "virtualNetworkName": "[parameters('virtualNetworkName')]",
+          "subnetResourceId": "[variables('subnetResourceId')]"
         },
-        "httpsOnly": true
+        "httpsOnly": true,
+        "virtualNetworkSubnetId": "[variables('subnetResourceId')]"
       }
     }
   ],
@@ -159,6 +223,14 @@
     "managedIdentityClientId": {
       "type": "string",
       "value": "[reference(variables('managedIdentityResourceId'), '2023-01-31').clientId]"
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "value": "[parameters('virtualNetworkName')]"
+    },
+    "subnetName": {
+      "type": "string",
+      "value": "[parameters('subnetName')]"
     }
   }
 }
