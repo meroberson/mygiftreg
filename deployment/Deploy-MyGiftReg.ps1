@@ -227,6 +227,7 @@ Write-Step "Updating production appsettings..."
 try {
     $sourceSettings = $ProductionSettingsPath
     $destinationSettings = "publish\frontend\appsettings.json"
+    del "publish\frontend\appsettings.Development.json"
     
     if (-not (Test-Path $sourceSettings)) {
         Write-Error-Step "Production settings file not found: $sourceSettings"
