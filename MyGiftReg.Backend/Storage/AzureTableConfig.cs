@@ -9,6 +9,7 @@ namespace MyGiftReg.Backend.Storage
     {
         private readonly IConfiguration? _configuration;
         private readonly bool _useManagedIdentity;
+        private readonly string _storageAccountEndpoint;
         private readonly string? _managedIdentityClientId;
         private TableServiceClient? _cachedTableServiceClient;
 
@@ -35,6 +36,7 @@ namespace MyGiftReg.Backend.Storage
             var managedIdentityConfig = _configuration.GetSection("ManagedIdentity");
             _useManagedIdentity = bool.Parse(managedIdentityConfig["Enabled"] ?? "false");
             _managedIdentityClientId = managedIdentityConfig["ClientId"];
+            _storageAccountEndpoint = managedIdentityConfig["StorageAccountEndpoint"];
 
             // Get connection string (may be empty for managed identity)
             ConnectionString = _configuration.GetConnectionString("AzureTableStorage") ?? string.Empty;
@@ -82,14 +84,8 @@ namespace MyGiftReg.Backend.Storage
                 throw new InvalidOperationException("IConfiguration is required when managed identity is enabled.");
             }
 
-            var storageAccountEndpoint = _configuration["StorageAccountEndpoint"];
-            if (string.IsNullOrEmpty(storageAccountEndpoint))
-            {
-                throw new InvalidOperationException("StorageAccountEndpoint configuration is required when managed identity is enabled.");
-            }
-
             // Create the table service URL
-            var tableServiceUri = new Uri($"https://{storageAccountEndpoint}/");
+            var tableServiceUri = new Uri($"https://{_storageAccountEndpoint}/");
             
             // Create DefaultAzureCredential which will use managed identity when running in Azure
             DefaultAzureCredential credential;

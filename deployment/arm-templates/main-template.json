@@ -36,13 +36,6 @@
       "metadata": {
         "description": "Name of the user-assigned managed identity"
       }
-    },
-    "entraApplicationId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Entra application ID for granting access to managed identity"
-      }
     }
   },
   "variables": {
@@ -67,6 +60,9 @@
         "name": "[variables('storageAccountType')]"
       },
       "kind": "StorageV2",
+      "dependsOn": [
+        "[variables('managedIdentityResourceId')]"
+      ],
       "properties": {
         "supportsHttpsTrafficOnly": true,
         "minimumTlsVersion": "TLS1_2",
@@ -77,7 +73,24 @@
           "ipRules": [],
           "defaultAction": "Allow"
         }
-      }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.Authorization/roleAssignments",
+          "apiVersion": "2022-04-01",
+          "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), variables('managedIdentityResourceId'), 'Storage Table Data Contributor')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+            "[variables('managedIdentityResourceId')]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')]",
+            "principalId": "[reference(variables('managedIdentityResourceId'), '2023-01-31').principalId]",
+            "principalType": "ServicePrincipal"
+          }
+        }
+      ]
     },
     {
       "type": "Microsoft.Web/serverfarms",
@@ -108,7 +121,7 @@
         "[variables('managedIdentityResourceId')]"
       ],
       "identity": {
-        "type": "SystemAssigned, UserAssigned",
+        "type": "UserAssigned",
         "userAssignedIdentities": {
           "[variables('managedIdentityResourceId')]": {}
         }
@@ -127,38 +140,6 @@
           "scmType": "None"
         },
         "httpsOnly": true
-      }
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), variables('managedIdentityResourceId'), 'Storage Table Data Contributor')]",
-      "location": "[parameters('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
-        "[variables('managedIdentityResourceId')]"
-      ],
-      "properties": {
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-03183b0e4d49')]",
-        "principalId": "[reference(variables('managedIdentityResourceId'), '2023-01-31').principalId]",
-        "principalType": "ServicePrincipal",
-        "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
-      }
-    },
-    {
-      "condition": "[not(empty(parameters('entraApplicationId')))]",
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "name": "[guid(parameters('entraApplicationId'), variables('managedIdentityResourceId'), 'MyGiftReg.Access')]",
-      "location": "[parameters('location')]",
-      "dependsOn": [
-        "[variables('managedIdentityResourceId')]"
-      ],
-      "properties": {
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'a5b5a8a2-1f1e-4a4a-b8c3-9c4e5f6g7h8i')]",
-        "principalId": "[reference(variables('managedIdentityResourceId'), '2023-01-31').principalId]",
-        "principalType": "ServicePrincipal",
-        "scope": "[resourceId('Microsoft.Graph/applications', parameters('entraApplicationId'))]"
       }
     }
   ],
