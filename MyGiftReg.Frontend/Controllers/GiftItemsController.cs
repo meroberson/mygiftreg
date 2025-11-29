@@ -275,6 +275,7 @@ namespace MyGiftReg.Frontend.Controllers
             request.Name = giftItemEntity.Name; // Preserve the original name
             request.Description = giftItemEntity.Description; // Preserve the original description
             request.Url = giftItemEntity.Url; // Preserve the original URL
+            request.Quantity = giftItemEntity.Quantity; // Preserve the original quantity
 
             ViewBag.EventName = eventName;
             ViewBag.GiftListId = giftListId;

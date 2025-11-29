@@ -4,6 +4,7 @@ using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Backend.Exceptions;
 using MyGiftReg.Backend.Utilities;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace MyGiftReg.Backend.Services
 {
@@ -62,6 +63,7 @@ namespace MyGiftReg.Backend.Services
                 Description = request.Description,
                 Url = request.Url,
                 GiftListId = Guid.Parse(request.GiftListId),
+                Quantity = request.Quantity,
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -125,8 +127,7 @@ namespace MyGiftReg.Backend.Services
             // If the viewer is the owner, hide reservation status
             if (giftList.Owner == viewerUserId)
             {
-                giftItem.ReservedBy = null; // Hide reservation status from owner
-                giftItem.ReservedByDisplayName = null; // Hide reservation display name from owner
+                giftItem.Reservations = [];
             }
 
             return giftItem;
@@ -194,8 +195,8 @@ namespace MyGiftReg.Backend.Services
                 Description = request.Description,
                 Url = request.Url,
                 GiftListId = existingGiftItem.GiftListId,
-                ReservedBy = existingGiftItem.ReservedBy,
-                ReservedByDisplayName = existingGiftItem.ReservedByDisplayName,
+                Quantity = request.Quantity, // Allow quantity to be edited
+                Reservations = existingGiftItem.Reservations,
                 CreatedDate = existingGiftItem.CreatedDate
             };
 
@@ -276,8 +277,7 @@ namespace MyGiftReg.Backend.Services
             {
                 foreach (var item in allItems)
                 {
-                    item.ReservedBy = null; // Hide reservation status from owner
-                    item.ReservedByDisplayName = null; // Hide reservation display name from owner
+                    item.Reservations = [];
                 }
             }
 
@@ -333,15 +333,30 @@ namespace MyGiftReg.Backend.Services
                 throw new NotFoundException($"Gift item with ID '{itemId}' not found in gift list '{giftListId}'.");
             }
 
-            // Check if item is already reserved
-            if (!string.IsNullOrEmpty(existingGiftItem.ReservedBy))
+            // Check if item has quantity available for reservation
+            if (existingGiftItem.TotalReserved >= existingGiftItem.Quantity)
             {
-                throw new MyGiftReg.Backend.Exceptions.ValidationException("Item is already reserved.");
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Item is fully reserved. No more quantity available.");
             }
 
-            // Reserve the item
-            existingGiftItem.ReservedBy = userId;
-            existingGiftItem.ReservedByDisplayName = userDisplayName;
+            // Check if user already has a reservation
+            var existingUserReservation = existingGiftItem.Reservations.FirstOrDefault(r => r.UserId == userId);
+            if (existingUserReservation != null)
+            {
+                // Increment existing reservation by 1
+                existingUserReservation.Quantity++;
+            }
+            else
+            {
+                // Add new reservation for this user
+                var newReservation = new Reservation
+                {
+                    UserId = userId,
+                    UserDisplayName = userDisplayName,
+                    Quantity = 1
+                };
+                existingGiftItem.Reservations.Add(newReservation);
+            }
 
             // Update the item
             try
@@ -387,15 +402,20 @@ namespace MyGiftReg.Backend.Services
                 return false;
             }
 
-            // Check if item is reserved by the specified user
-            if (existingGiftItem.ReservedBy != userId)
+            var userReservation = existingGiftItem.Reservations.FirstOrDefault(r => r.UserId == userId);
+            if (userReservation == null)
             {
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("You can only unreserve items that you have reserved.");
             }
 
-            // Unreserve the item
-            existingGiftItem.ReservedBy = null;
-            existingGiftItem.ReservedByDisplayName = null;
+            // Decrement reservation quantity by 1
+            userReservation.Quantity--;
+            
+            // If quantity becomes 0, remove the reservation entirely
+            if (userReservation.Quantity <= 0)
+            {
+                existingGiftItem.Reservations.Remove(userReservation);
+            }
 
             // Update the item
             try

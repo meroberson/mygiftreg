@@ -62,7 +62,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal("Service Test Description", result.Description);
             Assert.Equal("https://example.com/item", result.Url);
             Assert.Equal(giftList.Id, result.GiftListId);
-            Assert.Null(result.ReservedBy); // Should not be reserved initially
+            Assert.Empty(result.Reservations); // Should not be reserved initially
 
             // Verify it's persisted
             var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), result.Id.ToString(), userId);
@@ -247,7 +247,7 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal("Updated Service Test Description", result.Description);
             Assert.Equal("https://example.com/updated-item", result.Url);
             Assert.Equal(createdItem.Id, result.Id); // ID should remain the same
-            Assert.Equal(createdItem.ReservedBy, result.ReservedBy); // Reservation status should be preserved
+            Assert.Equivalent(createdItem.Reservations, result.Reservations); // Reservation status should be preserved
 
             // Verify update persisted
             var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), userId);
@@ -459,8 +459,8 @@ namespace MyGiftReg.Tests.Integration
             // Assert
             Assert.Equal(3, result.Count);
             
-            // All items should have null ReservedBy (reservation status hidden from owner)
-            Assert.All(result, item => Assert.Null(item.ReservedBy));
+            // All items should have no reservations (reservation status hidden from owner)
+            Assert.All(result, item => Assert.Empty(item.Reservations));
         }
 
         [Fact]
@@ -503,14 +503,14 @@ namespace MyGiftReg.Tests.Integration
             Assert.Equal(3, result.Count);
             
             // First item should not be reserved
-            var unreservedItem = result.FirstOrDefault(item => item.ReservedBy == null);
+            var unreservedItem = result.FirstOrDefault(item => item.Reservations.Count == 0);
             Assert.NotNull(unreservedItem);
             
             // Other items should show reservation status
-            var reservedItem1 = result.FirstOrDefault(item => item.ReservedBy == otherUserId1);
+            var reservedItem1 = result.FirstOrDefault(item => item.Reservations.SequenceEqual(new List<Reservation> {new () { Quantity = 1, UserId = otherUserId1, UserDisplayName = "Test User 1"}}));
             Assert.NotNull(reservedItem1);
             
-            var reservedItem2 = result.FirstOrDefault(item => item.ReservedBy == otherUserId2);
+            var reservedItem2 = result.FirstOrDefault(item => item.Reservations.SequenceEqual(new List<Reservation> {new () { Quantity = 1, UserId = otherUserId2, UserDisplayName = "Test User 2"}}));
             Assert.NotNull(reservedItem2);
         }
 
@@ -541,15 +541,13 @@ namespace MyGiftReg.Tests.Integration
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(reserverUserId, result.ReservedBy);
-            Assert.Equal("Test User", result.ReservedByDisplayName);
+            Assert.Equivalent(new List<Reservation> {new() { UserId = reserverUserId, UserDisplayName = "Test User", Quantity = 1}}, result.Reservations);
             Assert.Equal(createdItem.Id, result.Id);
 
             // Verify reservation persisted
             var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
             Assert.NotNull(retrieved);
-            Assert.Equal(reserverUserId, retrieved.ReservedBy);
-            Assert.Equal("Test User", retrieved.ReservedByDisplayName);
+            Assert.Equivalent(new List<Reservation> {new() {UserId = reserverUserId, UserDisplayName = "Test User", Quantity = 1}}, retrieved.Reservations);
         }
 
         [Fact]
@@ -639,7 +637,7 @@ namespace MyGiftReg.Tests.Integration
             // Verify unreservation persisted
             var retrieved = await _giftItemService.GetGiftItemAsync(_testPrefix + "_TestEvent", giftList.Id.ToString(), createdItem.Id.ToString(), reserverUserId);
             Assert.NotNull(retrieved);
-            Assert.Null(retrieved.ReservedBy);
+            Assert.Empty(retrieved.Reservations);
         }
 
         [Fact]
@@ -858,7 +856,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Assert - Owner should not see reservation status
             Assert.Single(result);
-            Assert.Null(result[0].ReservedBy);
+            Assert.Empty(result[0].Reservations);
         }
 
         [Fact]
@@ -892,8 +890,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Assert - Others should see reservation status
             Assert.Single(result);
-            Assert.Equal(reserverUserId, result[0].ReservedBy);
-            Assert.Equal(reserverUserDisplayName, result[0].ReservedByDisplayName);
+            Assert.Equivalent(new List<Reservation> {new Reservation { Quantity = 1, UserId = reserverUserId, UserDisplayName = reserverUserDisplayName}}, result[0].Reservations);
         }
 
         [Fact]
@@ -925,8 +922,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Assert - Owner should not see reservation status
             Assert.NotNull(result);
-            Assert.Null(result.ReservedBy);
-            Assert.Null(result.ReservedByDisplayName);
+            Assert.Empty(result.Reservations);
         }
 
         [Fact]
@@ -960,8 +956,7 @@ namespace MyGiftReg.Tests.Integration
 
             // Assert - Others should see reservation status
             Assert.NotNull(result);
-            Assert.Equal(reserverUserId, result.ReservedBy);
-            Assert.Equal(reserverUserDisplayName, result.ReservedByDisplayName);
+            Assert.Equivalent(new List<Reservation> {new Reservation { UserId = reserverUserId, UserDisplayName = reserverUserDisplayName, Quantity = 1}}, result.Reservations);
         }
     }
 }

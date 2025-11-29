@@ -24,6 +24,7 @@ namespace MyGiftReg.Backend.Storage
             // Default values for testing - use connection string authentication
             _useManagedIdentity = false;
             _managedIdentityClientId = null;
+            _storageAccountEndpoint = "";
             ConnectionString = "UseDevelopmentStorage=true";
         }
 
@@ -36,7 +37,7 @@ namespace MyGiftReg.Backend.Storage
             var managedIdentityConfig = _configuration.GetSection("ManagedIdentity");
             _useManagedIdentity = bool.Parse(managedIdentityConfig["Enabled"] ?? "false");
             _managedIdentityClientId = managedIdentityConfig["ClientId"];
-            _storageAccountEndpoint = managedIdentityConfig["StorageAccountEndpoint"];
+            _storageAccountEndpoint = managedIdentityConfig["StorageAccountEndpoint"] ?? "";
 
             // Get connection string (may be empty for managed identity)
             ConnectionString = _configuration.GetConnectionString("AzureTableStorage") ?? string.Empty;

@@ -578,7 +578,7 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
 
             // Act
-            var result = await _controller.Delete(null);
+            var result = await _controller.Delete("");
 
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
