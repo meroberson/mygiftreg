@@ -18,5 +18,6 @@ namespace MyGiftReg.Backend.Models
         public string EventName { get; set; } = string.Empty;
         public Guid Id { get; set; } = Guid.NewGuid();
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public int GiftItemCount { get; set; } = 0;
     }
 }

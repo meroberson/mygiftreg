@@ -101,7 +101,7 @@
                                             </small>
                                         </p>
                                         <p class="card-text">
-                                            <strong>Gift Items:</strong> <span id="item-count-@giftList.Id">Loading...</span>
+                                            <strong>Gift Items:</strong> @giftList.GiftItemCount
                                         </p>
                                     </div>
                                     <div class="card-footer bg-transparent">
@@ -144,7 +144,7 @@
                                             </small>
                                         </p>
                                         <p class="card-text">
-                                            <strong>Gift Items:</strong> <span id="item-count-@giftList.Id">Loading...</span>
+                                            <strong>Gift Items:</strong> @giftList.GiftItemCount
                                         </p>
                                     </div>
                                     <div class="card-footer bg-transparent">
@@ -180,24 +180,3 @@
         </div>
     </div>
 </div>
-
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Load item counts for each gift list
-            loadGiftListItemCounts();
-        });
-
-        function loadGiftListItemCounts() {
-            // This would be implemented to load item counts via AJAX
-            // For now, we'll just show placeholder text
-            $('.card').each(function() {
-                var countSpan = $(this).find('[id^="item-count-"]');
-                if (countSpan.length) {
-                    countSpan.text('Items will be loaded here');
-                }
-            });
-        }
-    </script>
-}

@@ -73,7 +73,13 @@ namespace MyGiftReg.Backend.Services
 
             try
             {
-                return await _giftItemRepository.CreateAsync(giftItemEntity);
+                var createdItem = await _giftItemRepository.CreateAsync(giftItemEntity);
+                
+                // Update the gift list item count
+                giftList.GiftItemCount = giftList.GiftItemCount + 1;
+                await _giftListRepository.UpdateAsync(eventName, request.GiftListId, giftList);
+                
+                return createdItem;
             }
             catch (MyGiftReg.Backend.Exceptions.ValidationException)
             {
@@ -240,7 +246,16 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("You can only delete items from gift lists that you own.");
             }
 
-            return await _giftItemRepository.DeleteAsync(giftListId, itemId);
+            bool deleteResult = await _giftItemRepository.DeleteAsync(giftListId, itemId);
+            
+            // Update the gift list item count (decrement if deletion was successful)
+            if (deleteResult && giftList.GiftItemCount > 0)
+            {
+                giftList.GiftItemCount = giftList.GiftItemCount - 1;
+                await _giftListRepository.UpdateAsync(eventName, giftListId, giftList);
+            }
+            
+            return deleteResult;
         }
 
         public async Task<IList<GiftItem>> GetGiftItemsByListAsync(string eventName, string giftListId, string viewerUserId)
@@ -270,6 +285,14 @@ namespace MyGiftReg.Backend.Services
             if (giftList == null)
             {
                 throw new NotFoundException($"Gift list with ID '{giftListId}' not found in event '{eventName}'.");
+            }
+
+            // Validate and update the GiftItemCount if it doesn't match the actual count
+            var actualCount = allItems.Count;
+            if (giftList.GiftItemCount != actualCount)
+            {
+                giftList.GiftItemCount = actualCount;
+                await _giftListRepository.UpdateAsync(eventName, giftListId, giftList);
             }
 
             // If the viewer is the owner, hide reservation status
