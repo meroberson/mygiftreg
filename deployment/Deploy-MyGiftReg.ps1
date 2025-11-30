@@ -57,8 +57,35 @@ function Write-Error-Step {
     exit 1
 }
 
+# Function to validate GUID format
+function Test-GuidFormat {
+    param(
+        [string]$InputString
+    )
+    
+    if ([string]::IsNullOrWhiteSpace($InputString)) {
+        return $false
+    }
+    
+    # Try to parse as GUID
+    $guid = [guid]::New($InputString)
+    return $guid.ToString() -eq $InputString
+}
+
 Write-ColorOutput "=== MyGiftReg Deployment Script ===" "Cyan"
 Write-ColorOutput "Starting deployment process..." "White"
+
+# Step 0: Validate Azure AD Client ID
+Write-Step "Validating Azure AD Client ID..."
+try {
+    if (-not (Test-GuidFormat -InputString $AzureAdClientId)) {
+        Write-Error-Step "Invalid Azure AD Client ID format. The AzureAdClientId parameter must be a valid GUID (e.g., '12345678-1234-1234-1234-123456789012'). Received: '$AzureAdClientId'"
+    }
+    Write-ColorOutput "Azure AD Client ID validation passed." "Green"
+}
+catch {
+    Write-Error-Step "Failed to validate Azure AD Client ID: $_"
+}
 
 # Step 1: Check if Az PowerShell modules are installed
 Write-Step "Checking Az PowerShell modules..."
@@ -241,7 +268,7 @@ try {
     $settings.AzureAd.Domain = $tenantDomain
     $settings.AzureAd.TenantId = $tenantId
     $settings.AzureAd.ClientId = $AzureAdClientId
-    $settings.AzureAd.ManagedIdentityClientId = $managedIdentityClientId
+    $settings.AzureAd.ClientCredentials[0].ManagedIdentityClientId = $managedIdentityClientId
     
     # Update Managed Identity configuration
     $settings.ManagedIdentity.StorageAccountEndpoint = "$storageAccountName.table.core.windows.net"
@@ -319,7 +346,7 @@ Write-ColorOutput "- Resource Group: $ResourceGroupName" "White"
 Write-ColorOutput "- App Name: $AppName" "White"
 Write-ColorOutput "- Location: $Location" "White"
 Write-ColorOutput "- Build Configuration: $BuildConfiguration" "White"
-Write-ColorOutput "- Azure AD Domain: $tenantDomain.onmicrosoft.com" "White"
+Write-ColorOutput "- Azure AD Domain: $tenantDomain" "White"
 Write-ColorOutput "- Azure AD Tenant ID: $tenantId" "White"
 Write-ColorOutput "- Azure AD Client ID: $AzureAdClientId" "White"
 Write-ColorOutput "- Managed Identity Client ID: $managedIdentityClientId" "White"
