@@ -1,0 +1,60 @@
+@model List<MyGiftReg.Frontend.Models.ShoppingListItemViewModel>
+
+@{
+    var eventName = ViewBag.EventName as string ?? "";
+    ViewData["Title"] = "Shopping List";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1>Shopping List for @eventName</h1>
+            <a href="@Url.Action("Details", "Events", new { eventName = eventName })" class="btn btn-outline-secondary">&larr; Back to Event</a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <h4 class="text-muted">You have no reserved items for this event.</h4>
+        </div>
+    }
+    else
+    {
+        var grouped = Model.GroupBy(i => i.GiftListName ?? "");
+        foreach (var group in grouped)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>@(string.IsNullOrEmpty(group.Key) ? "Unknown List" : group.Key)</strong>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var item in group)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div><strong>@item.ItemName</strong></div>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <div class="small text-muted">@item.Description</div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Url))
+                                {
+                                    <div class="small"><a href="@item.Url" target="_blank">View item</a></div>
+                                }
+                            </div>
+                            <div class="text-end">
+                                <div>Reserved: <strong>@item.QuantityReserved</strong></div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    }
+</div>

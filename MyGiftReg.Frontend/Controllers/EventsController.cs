@@ -6,6 +6,8 @@ using MyGiftReg.Backend.Models.DTOs;
 using MyGiftReg.Frontend.Services;
 using MyGiftReg.Frontend.Authorization;
 using System.Security.Claims;
+using System.Linq;
+using MyGiftReg.Frontend.Models;
 
 namespace MyGiftReg.Frontend.Controllers
 {
@@ -15,13 +17,15 @@ namespace MyGiftReg.Frontend.Controllers
     {
         private readonly IEventService _eventService;
         private readonly IGiftListService _giftListService;
+        private readonly MyGiftReg.Backend.Interfaces.IGiftItemService _giftItemService;
         private readonly IAzureUserService _azureUserService;
         private readonly ILogger<EventsController> _logger;
 
-        public EventsController(IEventService eventService, IGiftListService giftListService, IAzureUserService azureUserService, ILogger<EventsController> logger)
+        public EventsController(IEventService eventService, IGiftListService giftListService, MyGiftReg.Backend.Interfaces.IGiftItemService giftItemService, IAzureUserService azureUserService, ILogger<EventsController> logger)
         {
             _eventService = eventService;
             _giftListService = giftListService;
+            _giftItemService = giftItemService;
             _azureUserService = azureUserService;
             _logger = logger;
         }
@@ -181,6 +185,59 @@ namespace MyGiftReg.Frontend.Controllers
                 _logger.LogError(ex, "Error getting event details for {EventName}", eventName);
                 ViewBag.ErrorMessage = "An error occurred while loading event details. Please try again.";
                 return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: /Events/{eventName}/ShoppingList - show items reserved by current user for this event
+        [HttpGet("{eventName}/shoppinglist")]
+        public async Task<IActionResult> ShoppingList(string eventName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(eventName))
+                {
+                    return NotFound();
+                }
+
+                var currentUserId = _azureUserService.GetCurrentUserId();
+                var eventEntity = await _eventService.GetEventAsync(eventName);
+                if (eventEntity == null)
+                {
+                    return NotFound();
+                }
+
+                var reservedItems = await _giftItemService.GetReservedItemsByEventAsync(eventName, currentUserId);
+
+                // Map gift list IDs to names for display
+                var giftLists = await _giftListService.GetGiftListsByEventAsync(eventName);
+                var giftListMap = giftLists.ToDictionary(gl => gl.Id.ToString(), gl => gl.Name);
+
+                var model = new List<ShoppingListItemViewModel>();
+                foreach (var item in reservedItems)
+                {
+                    var reservation = item.Reservations.FirstOrDefault(r => r.UserId == currentUserId);
+                    var giftListId = item.GiftListId.ToString();
+                    model.Add(new ShoppingListItemViewModel
+                    {
+                        GiftListId = giftListId,
+                        GiftListName = giftListMap.ContainsKey(giftListId) ? giftListMap[giftListId] : "",
+                        ItemId = item.Id.ToString(),
+                        ItemName = item.Name,
+                        Description = item.Description,
+                        Url = item.Url,
+                        QuantityReserved = reservation?.Quantity ?? 0,
+                        QuantityTotal = item.Quantity
+                    });
+                }
+
+                ViewBag.EventName = eventName;
+                return View("ShoppingList", model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating shopping list for {EventName}", eventName);
+                TempData["ErrorMessage"] = "An error occurred while generating your shopping list. Please try again.";
+                return RedirectToAction(nameof(Details), new { eventName = eventName });
             }
         }
 

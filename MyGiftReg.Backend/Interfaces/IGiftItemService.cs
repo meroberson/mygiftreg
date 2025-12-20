@@ -12,5 +12,6 @@ namespace MyGiftReg.Backend.Interfaces
         Task<IList<GiftItem>> GetGiftItemsByListAsync(string eventName, string giftListId, string viewerUserId);
         Task<GiftItem?> ReserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId, string userDisplayName);
         Task<bool> UnreserveGiftItemAsync(string eventName, string giftListId, string itemId, string userId);
+        Task<IList<GiftItem>> GetReservedItemsByEventAsync(string eventName, string userId);
     }
 }

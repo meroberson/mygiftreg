@@ -10,6 +10,8 @@ using MyGiftReg.Backend.Interfaces;
 using MyGiftReg.Backend.Models;
 using MyGiftReg.Backend.Models.DTOs;
 using System.Security.Claims;
+using System.Linq;
+using MyGiftReg.Frontend.Models;
 
 namespace MyGiftReg.Tests.Frontend.Controllers
 {
@@ -17,6 +19,7 @@ namespace MyGiftReg.Tests.Frontend.Controllers
     {
         private readonly Mock<IEventService> _mockEventService;
         private readonly Mock<IGiftListService> _mockGiftListService;
+        private readonly Mock<IGiftItemService> _mockGiftItemService;
         private readonly Mock<IAzureUserService> _mockAzureUserService;
         private readonly Mock<ILogger<EventsController>> _mockLogger;
         private readonly EventsController _controller;
@@ -26,12 +29,14 @@ namespace MyGiftReg.Tests.Frontend.Controllers
         {
             _mockEventService = new Mock<IEventService>();
             _mockGiftListService = new Mock<IGiftListService>();
+            _mockGiftItemService = new Mock<IGiftItemService>();
             _mockAzureUserService = new Mock<IAzureUserService>();
             _mockLogger = new Mock<ILogger<EventsController>>();
             
             _controller = new EventsController(
                 _mockEventService.Object,
                 _mockGiftListService.Object,
+                _mockGiftItemService.Object,
                 _mockAzureUserService.Object,
                 _mockLogger.Object);
 
@@ -609,6 +614,94 @@ namespace MyGiftReg.Tests.Frontend.Controllers
             // Assert
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task ShoppingList_Get_WithReservedItems_ReturnsShoppingListViewWithModel()
+        {
+            // Arrange
+            var eventName = "ShoppingEvent";
+            var eventEntity = new Event { Name = eventName };
+
+            _mockEventService.Setup(s => s.GetEventAsync(eventName)).ReturnsAsync(eventEntity);
+            _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
+
+            // Gift lists
+            var list1 = new GiftList { Id = Guid.NewGuid(), Name = "List One" };
+            var list2 = new GiftList { Id = Guid.NewGuid(), Name = "List Two" };
+            _mockGiftListService.Setup(s => s.GetGiftListsByEventAsync(eventName)).ReturnsAsync(new List<GiftList> { list1, list2 });
+
+            // Gift items reserved by user on both lists
+            var item1 = new GiftItem
+            {
+                Id = Guid.NewGuid(),
+                Name = "Item A",
+                Description = "Desc A",
+                Url = "https://example.com/a",
+                Quantity = 3,
+                GiftListId = list1.Id,
+                Reservations = new List<Reservation> {
+                    new Reservation { UserId = "user456", UserDisplayName = "Other User", Quantity = 1 },
+                    new Reservation { UserId = "user123", UserDisplayName = "User", Quantity = 2 }
+                }
+            };
+
+            var item2 = new GiftItem
+            {
+                Id = Guid.NewGuid(),
+                Name = "Item B",
+                Description = "Desc B",
+                Url = "https://example.com/b",
+                Quantity = 1,
+                GiftListId = list2.Id,
+                Reservations = new List<Reservation> { new Reservation { UserId = "user123", UserDisplayName = "User", Quantity = 1 } }
+            };
+
+            _mockGiftItemService.Setup(s => s.GetReservedItemsByEventAsync(eventName, "user123")).ReturnsAsync(new List<GiftItem> { item1, item2 });
+
+            // Act
+            var result = await _controller.ShoppingList(eventName);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("ShoppingList", viewResult.ViewName);
+
+            var model = Assert.IsType<List<ShoppingListItemViewModel>>(viewResult.Model);
+            Assert.Equal(2, model.Count);
+
+            var modelItem1 = model.FirstOrDefault(m => m.ItemName == "Item A");
+            var modelItem2 = model.FirstOrDefault(m => m.ItemName == "Item B");
+
+            Assert.NotNull(modelItem1);
+            Assert.Equal("List One", modelItem1.GiftListName);
+            Assert.Equal(2, modelItem1.QuantityReserved);
+            Assert.Equal(3, modelItem1.QuantityTotal);
+
+            Assert.NotNull(modelItem2);
+            Assert.Equal("List Two", modelItem2.GiftListName);
+            Assert.Equal(1, modelItem2.QuantityReserved);
+            Assert.Equal(1, modelItem2.QuantityTotal);
+        }
+
+        [Fact]
+        public async Task ShoppingList_Get_WithNoReservedItems_ReturnsEmptyModel()
+        {
+            // Arrange
+            var eventName = "NoReservesEvent";
+            _mockEventService.Setup(s => s.GetEventAsync(eventName)).ReturnsAsync(new Event { Name = eventName });
+            _mockAzureUserService.Setup(s => s.GetCurrentUserId()).Returns("user123");
+            _mockGiftListService.Setup(s => s.GetGiftListsByEventAsync(eventName)).ReturnsAsync(new List<GiftList>());
+            _mockGiftItemService.Setup(s => s.GetReservedItemsByEventAsync(eventName, "user123")).ReturnsAsync(new List<GiftItem>());
+
+            // Act
+            var result = await _controller.ShoppingList(eventName);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("ShoppingList", viewResult.ViewName);
+
+            var model = Assert.IsType<List<ShoppingListItemViewModel>>(viewResult.Model);
+            Assert.Empty(model);
         }
     }
 }

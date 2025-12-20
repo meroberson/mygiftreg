@@ -72,8 +72,11 @@
                                 <strong>Total Lists:</strong> @(myGiftLists.Count + othersGiftLists.Count)
                             </p>
                             <!-- Create Gift List Button -->
-                            <a href="/Events/@Model.Name/GiftLists?view=create" class="btn btn-primary">
+                            <a href="/Events/@Model.Name/GiftLists?view=create" class="btn btn-primary me-2">
                                 <i class="fas fa-plus"></i> Create New Gift List
+                            </a>
+                            <a href="/Events/@Model.Name/ShoppingList" class="btn btn-outline-secondary">
+                                <i class="fas fa-shopping-cart"></i> Generate Shopping List
                             </a>
                         </div>
                     </div>

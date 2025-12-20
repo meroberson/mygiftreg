@@ -451,5 +451,41 @@ namespace MyGiftReg.Backend.Services
                 throw new MyGiftReg.Backend.Exceptions.ValidationException("Failed to unreserve item due to concurrent modification.");
             }
         }
+
+        public async Task<IList<GiftItem>> GetReservedItemsByEventAsync(string eventName, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("Event name cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new MyGiftReg.Backend.Exceptions.ValidationException("User ID cannot be null or empty.");
+            }
+
+            AzureStorageValidator.ValidateEventNameForAzureStorage(eventName);
+
+            // Get all gift lists for the event
+            var giftLists = await _giftListRepository.GetByEventAsync(eventName);
+
+            var reservedItems = new List<GiftItem>();
+
+            foreach (var list in giftLists)
+            {
+                var items = await _giftItemRepository.GetByGiftListAsync(list.Id.ToString());
+                foreach (var item in items)
+                {
+                    var reservation = item.Reservations.FirstOrDefault(r => r.UserId == userId);
+                    if (reservation != null && reservation.Quantity > 0)
+                    {
+                        // annotate item with gift list info via PartitionKey/RowKey/GiftListId are present
+                        reservedItems.Add(item);
+                    }
+                }
+            }
+
+            return reservedItems;
+        }
     }
 }

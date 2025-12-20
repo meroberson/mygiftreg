@@ -671,6 +671,69 @@ namespace MyGiftReg.Tests.Integration
         }
 
         [Fact]
+        public async Task GetReservedItemsByEventAsync_ReturnsItemsReservedByUserAcrossLists()
+        {
+            // Arrange - Create two gift lists in the same event owned by different users
+            var eventName = _testPrefix + "_TestEventReserved";
+
+            var list1Request = new CreateGiftListRequest { Name = _testPrefix + "_List1", EventName = eventName };
+            var list2Request = new CreateGiftListRequest { Name = _testPrefix + "_List2", EventName = eventName };
+            var list3Request = new CreateGiftListRequest { Name = _testPrefix + "_List3", EventName = eventName };
+
+            var owner1 = "owner1";
+            var owner2 = "owner2";
+
+            var giftList1 = await _giftListService.CreateGiftListAsync(list1Request, owner1, "Owner One");
+            var giftList2 = await _giftListService.CreateGiftListAsync(list2Request, owner2, "Owner Two");
+            var giftList3 = await _giftListService.CreateGiftListAsync(list3Request, owner2, "Owner Two");
+
+            // Create two items on all lists
+            var item1_1 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemA", Description = "Test item A", GiftListId = giftList1!.Id.ToString() }, owner1);
+            var item1_2 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemA2", Description = "Test item A2", GiftListId = giftList1!.Id.ToString() }, owner1);
+            var item2_1 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemB", Description = "Test item B", GiftListId = giftList2!.Id.ToString() }, owner2);
+            var item2_2 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemB2", Description = "Test item B2", GiftListId = giftList2!.Id.ToString() }, owner2);
+            var item3_1 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemC", Description = "Test item C", GiftListId = giftList3!.Id.ToString() }, owner2);
+            var item3_2 = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_ItemC2", Description = "Test item C2", GiftListId = giftList3!.Id.ToString() }, owner2);
+
+            // Reserve two items as the same user (reserver)
+            var reserver = "reserveruser";
+            await _giftItemService.ReserveGiftItemAsync(eventName, giftList1.Id.ToString(), item1_1!.Id.ToString(), reserver, "Reserver");
+            await _giftItemService.ReserveGiftItemAsync(eventName, giftList2.Id.ToString(), item2_1!.Id.ToString(), reserver, "Reserver");
+
+            // Reserve one of the other items in lists 2 and 3
+            await _giftItemService.ReserveGiftItemAsync(eventName, giftList2.Id.ToString(), item2_2!.Id.ToString(), owner1, "Owner One");
+            await _giftItemService.ReserveGiftItemAsync(eventName, giftList3.Id.ToString(), item3_2!.Id.ToString(), owner1, "Owner One");
+
+            // Act
+            var reserved = await _giftItemService.GetReservedItemsByEventAsync(eventName, reserver);
+
+            // Assert
+            Assert.NotNull(reserved);
+            Assert.Equal(2, reserved.Count);
+            Assert.Contains(reserved, r => r.Id == item1_1.Id);
+            Assert.Contains(reserved, r => r.Id == item2_1.Id);
+        }
+
+        [Fact]
+        public async Task GetReservedItemsByEventAsync_NoReservations_ReturnsEmptyList()
+        {
+            // Arrange - create event and lists but do not reserve any items
+            var eventName = _testPrefix + "_TestEventNoReservations";
+            var listRequest = new CreateGiftListRequest { Name = _testPrefix + "_EmptyList", EventName = eventName };
+            var owner = "owner";
+            var giftList = await _giftListService.CreateGiftListAsync(listRequest, owner, "Owner");
+
+            var createdItem = await _giftItemService.CreateGiftItemAsync(eventName, new CreateGiftItemRequest { Name = _testPrefix + "_NoReserveItem", Description = "No reserve", GiftListId = giftList!.Id.ToString() }, owner);
+
+            // Act
+            var reserved = await _giftItemService.GetReservedItemsByEventAsync(eventName, "someotheruser");
+
+            // Assert
+            Assert.NotNull(reserved);
+            Assert.Empty(reserved);
+        }
+
+        [Fact]
         public async Task GetGiftItemsByListAsync_MultipleItems_ReturnsAllItems()
         {
             // Arrange - Create gift list and multiple items
